@@ -1,0 +1,9 @@
+int churn ok
+slot reuse ok
+wide keys ok
+string keys ok
+string churn ok
+equality and copy ok
+json repeated key ok
+clear ok
+power-of-two division ok

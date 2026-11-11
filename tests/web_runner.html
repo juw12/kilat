@@ -46,21 +46,39 @@ async function runCase(kilat, testCase) {
     options.signal = controller.signal;
     setTimeout(() => controller.abort(), testCase.abortAfterMs);
   }
-  const result = testCase.mode === "check"
-    ? await kilat.check(testCase.source, options)
-    : await kilat.run(testCase.source, options);
+  // A timer that should fire every 5 ms: its longest silence tells how long the page was
+  // kept from its own work while the program ran.
+  let lastTick = performance.now();
+  let longestGap = 0;
+  const ticker = setInterval(() => {
+    const now = performance.now();
+    longestGap = Math.max(longestGap, now - lastTick);
+    lastTick = now;
+  }, 5);
+  let result;
+  try {
+    result = testCase.mode === "check"
+      ? await kilat.check(testCase.source, options)
+      : await kilat.run(testCase.source, options);
+  } finally {
+    clearInterval(ticker);
+  }
+  longestGap = Math.max(longestGap, performance.now() - lastTick);
   return {
     name: testCase.name,
     ...result,
     chunkCount: chunks.length,
     chunksMatchOutput: chunks.join("") === result.output,
     milliseconds: Math.round(performance.now() - started),
+    longestGapMs: Math.round(longestGap),
   };
 }
 
 async function main() {
   const cases = await (await fetch("/cases.json")).json();
-  const kilat = await loadKilat();
+  // tests/web_runner.html?worker=1 runs the same cases with the programs in a worker.
+  const wantWorker = new URLSearchParams(location.search).has("worker");
+  const kilat = await loadKilat(undefined, { worker: wantWorker });
   const results = [];
   for (const testCase of cases) {
     log.textContent = `running ${testCase.name}`;
@@ -70,7 +88,7 @@ async function main() {
       results.push({ name: testCase.name, threw: String((problem && problem.stack) || problem) });
     }
   }
-  return { version: kilat.version, userAgent: navigator.userAgent, results };
+  return { version: kilat.version, inWorker: kilat.inWorker, userAgent: navigator.userAgent, results };
 }
 
 main()

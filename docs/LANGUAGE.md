@@ -190,6 +190,9 @@ let sizes = [12, 5, 8, 20]
 let big = sizes.filter(|x| x > 6).map(|x| x * 2)
 print(big, sum(sizes), sizes.sort(), sizes[-1])
 
+let gaps = [0.48 mm, 0.52 mm, 0.50 mm, 0.47 mm]
+print("{mean(gaps):mm.3}", "{stddev(gaps):um.1}")   // 0.493 mm 22.2 um
+
 var counts: Map[Str, Int] = [:]
 for word in "the quick fox and the dog".split(" ") {
     counts[word] = counts.get_or(word, 0) + 1
@@ -269,8 +272,12 @@ A Kilat program can only reach the outside through the host that runs it.
 - Text: `len upper lower trim split lines chars join contains starts_with ends_with replace find
   slice repeat to_int to_float pad_left pad_right char_code from_char_code is_empty str`.
 - Lists: `len push pop insert remove_at first last contains index_of slice reverse sort sort_by
-  concat range fill clear copy is_empty extend sum map filter reduce each any all count find
-  flat_map zip enumerate group_by`.
+  concat range fill clear copy is_empty extend sum mean median stddev map filter reduce each any
+  all count find flat_map zip enumerate group_by`.
+- Statistics: `mean`, `median` and `stddev` take a list of numbers and keep its unit, so the
+  mean of lengths is a length. The answer is always a Float. `stddev` is the sample form (it
+  divides by n - 1) and needs at least two values. An empty list is a run-time error, not a
+  silent zero.
 - Maps: `len get get_or has remove keys values items clear is_empty copy`.
 - Optional and Result: `unwrap unwrap_or is_some is_none is_ok is_err ok`.
 - JSON: `json_parse json_str json_pretty`, with accessors such as `get`, `at`, `as_int`, `as_num`, `as_str`.

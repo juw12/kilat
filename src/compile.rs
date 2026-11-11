@@ -18,6 +18,8 @@ pub enum Op {
     AddI { a: u8, b: u8, c: u8 }, SubI { a: u8, b: u8, c: u8 }, MulI { a: u8, b: u8, c: u8 },
     DivI { a: u8, b: u8, c: u8 }, ModI { a: u8, b: u8, c: u8 }, PowI { a: u8, b: u8, c: u8 },
     NegI { a: u8, b: u8 }, AddII { a: u8, b: u8, imm: i32 }, MulII { a: u8, b: u8, imm: i32 },
+    /// Floor modulo and floor division by a literal power of two: `b & imm` and `b >> imm`.
+    AndII { a: u8, b: u8, imm: i32 }, ShrII { a: u8, b: u8, imm: i32 },
     AddF { a: u8, b: u8, c: u8 }, SubF { a: u8, b: u8, c: u8 }, MulF { a: u8, b: u8, c: u8 },
     DivF { a: u8, b: u8, c: u8 }, ModF { a: u8, b: u8, c: u8 }, PowF { a: u8, b: u8, c: u8 },
     PowFI { a: u8, b: u8, c: u8 }, NegF { a: u8, b: u8 }, IntToFloat { a: u8, b: u8 }, Sqrt { a: u8, b: u8 },
@@ -622,6 +624,19 @@ impl<'a> Compiler<'a> {
                 if let Some(imm) = lit32(r).and_then(|k| k.checked_neg()) {
                     let b = self.any(l);
                     self.emit(Op::AddII { a, b, imm });
+                    return;
+                }
+            }
+            // For a positive power of two, floor modulo is a mask and floor division is an
+            // arithmetic shift; both are exact for negative numbers too and cannot overflow.
+            ModI | DivI => {
+                if let Some(k) = lit32(r).filter(|k| *k > 0 && k & (k - 1) == 0) {
+                    let b = self.any(l);
+                    self.emit(if op == ModI {
+                        Op::AndII { a, b, imm: k - 1 }
+                    } else {
+                        Op::ShrII { a, b, imm: k.trailing_zeros() as i32 }
+                    });
                     return;
                 }
             }

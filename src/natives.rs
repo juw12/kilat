@@ -52,6 +52,42 @@ fn fl(x: f64) -> Result<Value, Trap> {
     Ok(Value::Float(x))
 }
 
+/// The numbers of a list of Int or Float, for `mean`, `median` and `stddev`.
+fn numbers(heap: &Heap, list: Value, name: &str, least: usize) -> Result<Vec<f64>, Trap> {
+    let items = heap.list_of(list)?;
+    if items.len() < least {
+        let need = if least == 1 { "at least one value" } else { "at least two values" };
+        let got = if items.is_empty() { "an empty list".to_string() } else { format!("a list of {}", items.len()) };
+        return err(format!("{} needs {}, got {}", name, need, got));
+    }
+    items.iter().map(|v| float(*v)).collect()
+}
+
+/// A sum that carries a running correction (Neumaier), so small terms next to large ones are not lost.
+fn careful_sum(values: impl Iterator<Item = f64>) -> f64 {
+    let (mut total, mut lost) = (0.0f64, 0.0f64);
+    for x in values {
+        let next = total + x;
+        lost += if total.abs() >= x.abs() { (total - next) + x } else { (x - next) + total };
+        total = next;
+    }
+    if total.is_finite() {
+        total + lost
+    } else {
+        total
+    }
+}
+
+fn mean_of(xs: &[f64]) -> f64 {
+    let n = xs.len() as f64;
+    let mean = careful_sum(xs.iter().copied()) / n;
+    if mean.is_finite() {
+        return mean;
+    }
+    // The plain sum went past the largest float; dividing first keeps it in range.
+    careful_sum(xs.iter().map(|x| x / n))
+}
+
 fn option(heap: &mut Heap, v: Option<Value>) -> Result<Value, Trap> {
     match v {
         Some(v) => heap.alloc(Obj::Enum(T_SOME, Box::new([v]))),
@@ -567,7 +603,7 @@ fn eq(heap: &Heap, a: Value, b: Value, depth: u32, steps: &mut u64) -> Result<bo
                         return Ok(false);
                     }
                     for (k, v) in p.iter() {
-                        match q.get(&heap.key(k)?) {
+                        match q.get(&heap.objs, k, heap.hash_key(k)?) {
                             Some(w) => {
                                 if !eq(heap, v, w, depth + 1, steps)? {
                                     return Ok(false);
@@ -974,7 +1010,7 @@ impl<'a> JsonIn<'a> {
             }
             Some(b'{') => {
                 self.pos += 1;
-                let map = heap.alloc(Obj::Map(Box::new(KMap::new(heap.seed))))?;
+                let map = heap.alloc(Obj::Map(Box::new(KMap::new())))?;
                 self.ws();
                 if self.peek() == Some(b'}') {
                     self.pos += 1;
@@ -1650,6 +1686,24 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
                 total += float(*v)?;
             }
             fl(total)
+        }
+        B::Mean => fl(mean_of(&numbers(&core.heap, arg(0)?, "mean", 1)?)),
+        B::Median => {
+            let mut xs = numbers(&core.heap, arg(0)?, "median", 1)?;
+            xs.sort_by(|a, b| a.total_cmp(b));
+            let mid = xs.len() / 2;
+            if xs.len() % 2 == 1 {
+                fl(xs[mid])
+            } else {
+                fl(xs[mid - 1] / 2.0 + xs[mid] / 2.0)
+            }
+        }
+        B::Stddev => {
+            // The sample form: the squared distances from the mean are divided by n - 1.
+            let xs = numbers(&core.heap, arg(0)?, "stddev", 2)?;
+            let mean = mean_of(&xs);
+            let squares = careful_sum(xs.iter().map(|x| (x - mean) * (x - mean)));
+            fl((squares / (xs.len() - 1) as f64).sqrt())
         }
     }
 }

@@ -13,7 +13,7 @@
 //! ```
 //!
 //! Numbers cross the boundary as `f64` so that JavaScript can pass them without BigInt.
-//! This file holds all the `unsafe` code of the project.
+//! Together with `alloc.rs` this file holds all the `unsafe` code of the project.
 
 use crate::vm::{Status, Vm};
 use crate::{build, resolve_import, VERSION};

@@ -427,6 +427,8 @@ impl Vm {
                 Op::NegI { a, b } => set_int!(a, int!(b).checked_neg()),
                 Op::AddII { a, b, imm } => set_int!(a, int!(b).checked_add(imm as i64)),
                 Op::MulII { a, b, imm } => set_int!(a, int!(b).checked_mul(imm as i64)),
+                Op::AndII { a, b, imm } => r!(a) = Value::Int(int!(b) & imm as i64),
+                Op::ShrII { a, b, imm } => r!(a) = Value::Int(int!(b) >> (imm & 63)),
 
                 Op::AddF { a, b, c } => r!(a) = Value::Float(flt!(b) + flt!(c)),
                 Op::SubF { a, b, c } => r!(a) = Value::Float(flt!(b) - flt!(c)),
@@ -692,10 +694,11 @@ impl Vm {
                     allocated!();
                 }
                 Op::NewMap { a, n } => {
-                    let mut map = KMap::new(core.heap.seed);
+                    let mut map = KMap::new();
                     for pair in slice!(a, 2 * n as usize).chunks_exact(2) {
-                        let key = tri!(core.heap.key(pair[0]));
-                        map.set(key, pair[0], pair[1]);
+                        let hash = tri!(core.heap.hash_of(pair[0]));
+                        let key_len = core.heap.key_len(pair[0]);
+                        map.set(&core.heap.objs, pair[0], hash, key_len, pair[1]);
                     }
                     r!(a) = tri!(core.heap.alloc(Obj::Map(Box::new(map))));
                     allocated!();

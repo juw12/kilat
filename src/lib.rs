@@ -4,6 +4,7 @@
 //! The core does no input or output of its own: everything from the outside world goes
 //! through the host gate (`vm::Status::Host`), which the embedder answers.
 
+pub mod alloc;
 pub mod ast;
 pub mod builtins;
 pub mod check;
@@ -23,6 +24,12 @@ use compile::Program;
 use types::{Diag, Pos};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Small blocks come from a pool (see `alloc.rs`); this covers the `kilat` program and the native library.
+/// The WebAssembly build keeps the standard allocator: the pool is there for the slow Windows one.
+#[cfg(not(target_arch = "wasm32"))]
+#[global_allocator]
+static POOL: alloc::Pool = alloc::Pool::new();
 
 /// The standard prelude, written in Kilat.
 pub const PRELUDE: &str = include_str!("prelude.kilat");

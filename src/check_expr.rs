@@ -7,7 +7,8 @@ use crate::parser::parse_unit_str;
 use crate::tir::*;
 use crate::types::*;
 
-const SPECIAL: [&str; 8] = ["print", "str", "assert", "assert_eq", "sqrt", "sum", "panic", "host"];
+const SPECIAL: [&str; 11] =
+    ["print", "str", "assert", "assert_eq", "sqrt", "sum", "mean", "median", "stddev", "panic", "host"];
 const FORMAT_HELP: &str = "examples: `{x:.2}` (2 decimals), `{x:8}` (width 8), `{p:MPa.1}` (shown in MPa)";
 
 fn count(n: usize, word: &str) -> String {
@@ -1065,6 +1066,42 @@ impl Checker {
                         Some(self.bad(pos))
                     }
                 }
+            }
+            "mean" | "median" | "stddev" => {
+                // A list of Int or of Float in any unit; the answer is a Float in the same unit.
+                if n != 1 {
+                    return wrong(self, "1 argument (a list)");
+                }
+                let (v, t) = self.expr(argv[0], &Expect::Infer);
+                let el = match self.resolve(&t) {
+                    Ty::List(el) => self.resolve(&el),
+                    Ty::Error => return Some(self.bad(pos)),
+                    other => {
+                        let msg = format!("`{}` needs a list of numbers, found {}", name, self.show(&other));
+                        self.err(argv[0].pos, msg);
+                        return Some(self.bad(pos));
+                    }
+                };
+                let d = match el {
+                    Ty::Int => Dim::none(),
+                    Ty::Num(d) => d,
+                    Ty::Var(_) => {
+                        self.unify(&el, &Ty::float());
+                        Dim::none()
+                    }
+                    Ty::Error => return Some(self.bad(pos)),
+                    other => {
+                        let msg = format!("`{}` needs a list of numbers, found a list of {}", name, self.show(&other));
+                        self.err(argv[0].pos, msg);
+                        return Some(self.bad(pos));
+                    }
+                };
+                let id = match name {
+                    "mean" => B::Mean,
+                    "median" => B::Median,
+                    _ => B::Stddev,
+                };
+                Some((te(TKind::CallBuiltin(id as u16, vec![v]), pos), Ty::Num(d)))
             }
             "panic" => {
                 if n != 1 {

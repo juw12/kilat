@@ -6,3 +6,4 @@ c 3
 ["x": [1, 2]] [1: "a"]
 maps ok
 math ok
+statistics ok

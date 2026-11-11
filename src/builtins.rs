@@ -116,4 +116,7 @@ builtins! {
     Sqrt, "$sqrt", "(Float) -> Float";
     SumI, "$sum_i", "(List[Int]) -> Int";
     SumF, "$sum_f", "(List[Float]) -> Float";
+    Mean, "$mean", "(List[Float]) -> Float";
+    Median, "$median", "(List[Float]) -> Float";
+    Stddev, "$stddev", "(List[Float]) -> Float";
 }

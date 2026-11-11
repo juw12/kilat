@@ -404,7 +404,10 @@
   }
 
   try {
-    kilat = await loadKilat();
+    // Add ?worker to the address to run programs in a worker: Stop then works at once, also
+    // in the middle of one long step. Measured in headless Edge it is the slower way to run.
+    const useWorker = new URLSearchParams(location.search).has("worker");
+    kilat = await loadKilat(undefined, { worker: useWorker });
     setBusy(false);
     statusLine.textContent = `Kilat ${kilat.version} is ready.`;
     await start("run");

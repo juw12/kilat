@@ -287,6 +287,13 @@ SHOW_HOST = (
 )
 ROLL = "print(rand_int(1, 1000000000), rand_int(1, 1000000000))\n"
 DEEP = "print(" + "(" * 20000 + "1" + ")" * 20000 + ")\n"
+# One step that takes long: many copies of a long text, with no loop turn or call in between
+# at which the engine could hand control back.
+LONG_STEP = (
+    'let text = repeat("ab", 4000000)\nvar total = 0\n'
+    + 'total += len(replace(text, "a", "c"))\n' * 60
+    + "print(total)\n"
+)
 
 
 def api_cases():
@@ -401,6 +408,21 @@ def api_cases():
     ]
 
 
+def worker_cases():
+    """Cases that only a worker can pass: one long step must not hold the page up."""
+    roomy = {"memoryMb": 256}
+    return [
+        (
+            {"name": "the page stays smooth during one long step", "source": LONG_STEP, "options": roomy},
+            {"ok": True, "output": "480000000\n", "max_gap_ms": 150},
+        ),
+        (
+            {"name": "stop signal ends one long step", "source": LONG_STEP, "options": roomy, "abortAfterMs": 100},
+            {"ok": False, "kind": "stopped", "max_ms": 1000},
+        ),
+    ]
+
+
 def short(value, limit=110):
     text = repr(value)
     return text if len(text) <= limit else text[: limit - 3] + "..."
@@ -421,28 +443,43 @@ def problems_with(result, expectation):
         elif key == "max_ms":
             if result["milliseconds"] > wanted:
                 problems.append(f"it took {result['milliseconds']:.0f} ms, expected at most {wanted}")
+        elif key == "max_gap_ms":
+            if result["longestGapMs"] > wanted:
+                problems.append(f"the page stood still for {result['longestGapMs']:.0f} ms, expected at most {wanted}")
         elif result[key] != wanted:
             problems.append(f"{key} is {short(result[key])}, expected {short(wanted)}")
     return problems
 
 
-def run_checks(timeout=120.0):
-    """Runs every case; returns (report, [(name, problems)]) in case order."""
-    pairs = program_cases() + api_cases()
-    report = run_in_browser([case for case, _ in pairs], timeout=timeout)
+def check_pairs(pairs, page, label, timeout):
+    """Runs `pairs` on `page`; returns (report, [(name, problems)]) in case order."""
+    report = run_in_browser([case for case, _ in pairs], timeout=timeout, page=page)
     by_name = {result["name"]: result for result in report["results"]}
     outcomes = []
     for case, expectation in pairs:
         result = by_name.get(case["name"])
         problems = ["no result came back"] if result is None else problems_with(result, expectation)
-        outcomes.append((case["name"], problems))
+        outcomes.append((label + case["name"], problems))
     seeds = [by_name.get(name, {}).get("output") for name in ("seed 7", "seed 7 again", "seed 8")]
     seed_problems = []
     if seeds[0] != seeds[1]:
         seed_problems.append(f"the same seed gave {short(seeds[0])} and then {short(seeds[1])}")
     if seeds[0] == seeds[2]:
         seed_problems.append(f"two different seeds both gave {short(seeds[0])}")
-    outcomes.append(("the same seed repeats and another seed differs", seed_problems))
+    outcomes.append((label + "the same seed repeats and another seed differs", seed_problems))
+    return report, outcomes
+
+
+def run_checks(timeout=120.0):
+    """Runs every case on the page and then again in a worker; returns (report, outcomes)."""
+    report, outcomes = check_pairs(program_cases() + api_cases(), "tests/web_runner.html", "", timeout)
+    worker_pairs = program_cases() + api_cases() + worker_cases()
+    worker_report, worker_outcomes = check_pairs(
+        worker_pairs, "tests/web_runner.html?worker=1", "worker: ", timeout
+    )
+    started = [] if worker_report.get("inWorker") else ["loadKilat could not start a worker"]
+    outcomes.append(("worker: programs run in a worker", started))
+    outcomes.extend(worker_outcomes)
     return report, outcomes
 
 
