@@ -15,7 +15,7 @@ on every measured program, safer than Python on the bug set, and one click to in
 - [x] F. Try the plugin inside the real Cairn app (8 of 8 checks, passed twice, headless Edge, demo brain)
 - [x] G. Glow: GlowCode page that checks Kilat programs before running them (https://github.com/juw12/projects/pull/53)
 - [x] H. /hone loop (frozen rubric, baseline v0 = 94f3e63, council judge, keep-best)
-- [ ] I. Sync: repo, profile, portfolio card, landing page, Obsidian, precedent log, vibe end
+- [x] I. Sync: repo, profile, portfolio card, landing page, Obsidian, precedent log, vibe end
 - [x] J. Recapture vow-card.jpg (juw12/portfolio ad8ed7c; mean saturation 0.04 -> 0.22 with the card tool's own measure, threshold 0.10; live file matches by hash)
 
 ## Assumptions
@@ -64,5 +64,7 @@ Self-judge scores per criterion (rubric kilat-r2, weights 0.30 / 0.20 / 0.25 / 0
 - S3 v1: release download verified by hash and run; a real install was not run and the files are unsigned; worker mode is opt-in.
 - S4 v1: loaded by the real Cairn web app (8 of 8, twice); both pull requests are open, not merged.
 - S5 v1: losses are stated, but the fuzz and release sections of the README were added by hand, not by judge.py; nothing was reproduced by someone else.
+
+- Sync done 2026-11-12: Kilat repo d7c2e2a (written through the GitHub API), landing page 80ad196, profile ffa5b63, portfolio text 5dda6f7 and c90b42a, Obsidian note and update log pushed, precedent log and vibe end run last.
 
 stop: no further round possible without an engine rebuild or outside reviewers (net speed of 3 or more, an independent bug set, merged pull requests, independent reproduction); v1 kept, below DONE_SCORE 8.5.
