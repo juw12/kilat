@@ -37,7 +37,8 @@ set KILAT_EXIT=0
 goto finish
 :no_exe
 echo kilat.exe was not found next to this installer.
-echo Build it first:  python build.py
+echo Download kilat-windows-x64.zip from https://github.com/juw12/kilat/releases/latest
+echo and run install.cmd from the unpacked folder, or build it:  python build.py
 set KILAT_EXIT=1
 goto finish
 :copy_failed
