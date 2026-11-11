@@ -1,0 +1,922 @@
+{
+ "date": "2026-11-11",
+ "kilat": "kilat 0.1.0",
+ "python": "CPython 3.13.2",
+ "system": "Windows 10",
+ "processor": "Intel(R) Core(TM) Ultra 7 258V",
+ "speed": {
+  "runs": 5,
+  "pinned_to_fastest_cores": true,
+  "cpu_time_from": "QueryProcessCycleTime",
+  "startup": {
+   "kilat_cpu": 0.006526190187764991,
+   "python_cpu": 0.06771817080557238,
+   "kilat_wall": 0.06818429999839282,
+   "python_wall": 0.10424359999888111
+  },
+  "benchmarks": [
+   {
+    "name": "collatz",
+    "same_output": true,
+    "kilat_cpu": 0.3447114827377347,
+    "kilat_cpu_median": 0.34621533373712904,
+    "python_cpu": 0.7745960266505149,
+    "python_cpu_median": 0.7867806886735312,
+    "kilat_wall": 0.7349653999990551,
+    "python_wall": 1.5719546999971499,
+    "ratio": 2.2470850709659915,
+    "ratio_net": 2.090208744782996
+   },
+   {
+    "name": "fib",
+    "same_output": true,
+    "kilat_cpu": 0.08677287462144155,
+    "kilat_cpu_median": 0.0882088794669897,
+    "python_cpu": 0.30660154754694124,
+    "python_cpu_median": 0.3118722810417929,
+    "kilat_wall": 0.21966319999773987,
+    "python_wall": 0.4418403000017861,
+    "ratio": 3.533380090086126,
+    "ratio_net": 2.97686288757269
+   },
+   {
+    "name": "loop_sum",
+    "same_output": true,
+    "kilat_cpu": 0.1214656795881284,
+    "kilat_cpu_median": 0.1252266123561478,
+    "python_cpu": 0.5401734930345246,
+    "python_cpu_median": 0.5493332652937614,
+    "kilat_wall": 0.23309410000001662,
+    "python_wall": 1.2482368999990285,
+    "ratio": 4.447128562291591,
+    "ratio_net": 4.110469993330755
+   },
+   {
+    "name": "mandelbrot",
+    "same_output": true,
+    "kilat_cpu": 0.14298749061175045,
+    "kilat_cpu_median": 0.1433408473652332,
+    "python_cpu": 0.6570681102362205,
+    "python_cpu_median": 0.688808683827983,
+    "kilat_wall": 0.26848229999814066,
+    "python_wall": 1.8737777000023925,
+    "ratio": 4.595283877107385,
+    "ratio_net": 4.318806413243439
+   },
+   {
+    "name": "map_count",
+    "same_output": true,
+    "kilat_cpu": 0.2784331714112659,
+    "kilat_cpu_median": 0.2842513628104179,
+    "python_cpu": 0.2840545112053301,
+    "python_cpu_median": 0.2895719200484555,
+    "kilat_wall": 0.6775908000017807,
+    "python_wall": 0.6798617999993439,
+    "ratio": 1.0201891885423418,
+    "ratio_net": 0.7956262815552152
+   },
+   {
+    "name": "matmul",
+    "same_output": true,
+    "kilat_cpu": 0.08477943307086615,
+    "kilat_cpu_median": 0.08870243549364022,
+    "python_cpu": 0.24736867413688673,
+    "python_cpu_median": 0.27187894730466383,
+    "kilat_wall": 0.29978440000195405,
+    "python_wall": 0.6367145000003802,
+    "ratio": 2.9177910865494243,
+    "ratio_net": 2.295757935548892
+   },
+   {
+    "name": "nbody",
+    "same_output": true,
+    "kilat_cpu": 0.14458916050878257,
+    "kilat_cpu_median": 0.14618648637189582,
+    "python_cpu": 0.5926511096305269,
+    "python_cpu_median": 0.5970044524530588,
+    "kilat_wall": 0.5385513000001083,
+    "python_wall": 1.91258839999864,
+    "ratio": 4.0988626501813625,
+    "ratio_net": 3.8021269396450394
+   },
+   {
+    "name": "sieve",
+    "same_output": true,
+    "kilat_cpu": 0.14573399697153241,
+    "kilat_cpu_median": 0.1472062628709873,
+    "python_cpu": 0.2881860539067232,
+    "python_cpu_median": 0.29815318291944276,
+    "kilat_wall": 0.4672866000000795,
+    "python_wall": 0.8391897000001336,
+    "ratio": 1.9774799284686968,
+    "ratio_net": 1.5837321784948835
+   },
+   {
+    "name": "sort",
+    "same_output": true,
+    "kilat_cpu": 0.0909522350090854,
+    "kilat_cpu_median": 0.09280820290732889,
+    "python_cpu": 0.7611917625681405,
+    "python_cpu_median": 0.777517317383404,
+    "kilat_wall": 0.27376490000096965,
+    "python_wall": 1.5002370000001974,
+    "ratio": 8.369137520283074,
+    "ratio_net": 8.21397701657395
+   },
+   {
+    "name": "strings",
+    "same_output": true,
+    "kilat_cpu": 0.22834808600847972,
+    "kilat_cpu_median": 0.2367896190187765,
+    "python_cpu": 0.2251958067837674,
+    "python_cpu_median": 0.22579960205935795,
+    "kilat_wall": 0.452702099999442,
+    "python_wall": 0.5331387000005634,
+    "ratio": 0.9861952894818866,
+    "ratio_net": 0.7099282755453262
+   }
+  ],
+  "geometric_mean": 2.8244610428035632,
+  "geometric_mean_net": 2.4267862394505055,
+  "faster": [
+   "collatz",
+   "fib",
+   "loop_sum",
+   "mandelbrot",
+   "matmul",
+   "nbody",
+   "sieve",
+   "sort"
+  ],
+  "slower": [
+   "map_count",
+   "strings"
+  ],
+  "outputs_match": true
+ },
+ "sizes": {
+  "bytes": {
+   "kilat program": 1144832,
+   "kilat library": 1633792,
+   "docs/kilat.wasm": 715723,
+   "docs/kilat.js": 9490,
+   "main.js (Cairn plugin)": 352472
+  },
+  "needs": {
+   "kilat program": [
+    "api-ms-win-core-synch-l1-2-0.dll",
+    "bcryptprimitives.dll",
+    "kernel32.dll",
+    "msvcrt.dll",
+    "ntdll.dll"
+   ],
+   "kilat library": [
+    "api-ms-win-core-synch-l1-2-0.dll",
+    "bcryptprimitives.dll",
+    "kernel32.dll",
+    "msvcrt.dll",
+    "ntdll.dll",
+    "userenv.dll",
+    "ws2_32.dll"
+   ]
+  },
+  "needs_only_windows": true,
+  "wasm_imports": 0
+ },
+ "bugs": {
+  "bugs": [
+   {
+    "name": "units_add_length_to_mass",
+    "category": "units",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": false
+   },
+   {
+    "name": "units_pressure_as_force",
+    "category": "units",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": false
+   },
+   {
+    "name": "units_compare_stress_with_force",
+    "category": "units",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": false
+   },
+   {
+    "name": "units_wrong_formula",
+    "category": "units",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": false
+   },
+   {
+    "name": "units_plain_number_as_speed",
+    "category": "units",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": false
+   },
+   {
+    "name": "name_typo_in_variable",
+    "category": "names",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "name_undefined_function",
+    "category": "names",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "name_wrong_field",
+    "category": "names",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "name_typo_in_named_argument",
+    "category": "names",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "type_wrong_argument_count",
+    "category": "types",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "type_text_plus_number",
+    "category": "types",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "type_len_of_number",
+    "category": "types",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "type_return_mismatch",
+    "category": "types",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "type_wrong_map_key",
+    "category": "types",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "type_text_in_number_list",
+    "category": "types",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "safety_missing_value_used",
+    "category": "safety",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": true,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "safety_case_not_handled",
+    "category": "safety",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "safety_constant_changed",
+    "category": "safety",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": true
+   },
+   {
+    "name": "safety_error_ignored",
+    "category": "safety",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": false
+   },
+   {
+    "name": "safety_missing_return",
+    "category": "safety",
+    "kilat_refuses": true,
+    "fixed_runs": true,
+    "python_compiles": true,
+    "python_crashes_when_run": false,
+    "mypy_strict_catches": true
+   }
+  ],
+  "categories": {
+   "units": {
+    "bugs": 5,
+    "kilat": 5,
+    "mypy": 0,
+    "python_before_running": 0
+   },
+   "names": {
+    "bugs": 4,
+    "kilat": 4,
+    "mypy": 4,
+    "python_before_running": 0
+   },
+   "types": {
+    "bugs": 6,
+    "kilat": 6,
+    "mypy": 6,
+    "python_before_running": 0
+   },
+   "safety": {
+    "bugs": 5,
+    "kilat": 5,
+    "mypy": 4,
+    "python_before_running": 0
+   }
+  },
+  "total": 20,
+  "kilat_refuses": 20,
+  "fixed_run": 20,
+  "python_refuses_before_running": 0,
+  "python_crashes_when_run": 10,
+  "python_runs_to_a_wrong_answer": 10,
+  "mypy_measured": true,
+  "mypy_strict_catches": 14
+ },
+ "conformance": [
+  [
+   "tests/builtins.kilat",
+   true
+  ],
+  [
+   "tests/json.kilat",
+   true
+  ],
+  [
+   "tests/language.kilat",
+   true
+  ],
+  [
+   "tests/tour.kilat",
+   true
+  ],
+  [
+   "tests/units.kilat",
+   true
+  ]
+ ],
+ "library_agrees": [
+  [
+   "tests/builtins.kilat",
+   true
+  ],
+  [
+   "tests/json.kilat",
+   true
+  ],
+  [
+   "tests/language.kilat",
+   true
+  ],
+  [
+   "tests/tour.kilat",
+   true
+  ],
+  [
+   "tests/units.kilat",
+   true
+  ],
+  [
+   "examples/beam_deflection.kilat",
+   true
+  ],
+  [
+   "examples/bolt_joint.kilat",
+   true
+  ],
+  [
+   "examples/bom_mass.kilat",
+   true
+  ],
+  [
+   "examples/hello.kilat",
+   true
+  ],
+  [
+   "examples/shaft_power.kilat",
+   true
+  ]
+ ],
+ "sandbox": [
+  [
+   "an endless loop is stopped at the fuel limit",
+   true
+  ],
+  [
+   "a growing list is stopped at the memory limit",
+   true
+  ],
+  [
+   "a file cannot be read without --allow-read",
+   true
+  ],
+  [
+   "--allow-read lets a file be read",
+   true
+  ],
+  [
+   "a file cannot be written without --allow-write",
+   true
+  ],
+  [
+   "--allow-write lets a file be written",
+   true
+  ]
+ ],
+ "claims": [
+  {
+   "what": "round_to(2.675, 2)",
+   "kilat": "2.68",
+   "python": "2.67",
+   "holds": true
+  },
+  {
+   "what": "\"{1.005:.2}\"",
+   "kilat": "1.01",
+   "python": "1.00",
+   "holds": true
+  },
+  {
+   "what": "0.0 / 0.0",
+   "kilat": "runtime error: division by zero",
+   "python": "ZeroDivisionError",
+   "holds": true
+  },
+  {
+   "what": "sqrt(-1.0)",
+   "kilat": "runtime error: sqrt needs a number that is not negative",
+   "python": "ValueError",
+   "holds": true
+  },
+  {
+   "what": "9223372036854775807 + 1",
+   "kilat": "runtime error: integer overflow",
+   "python": "9223372036854775808",
+   "holds": true
+  },
+  {
+   "what": "a misspelt name",
+   "kilat": "did you mean `length`?",
+   "python": "NameError when the line runs",
+   "holds": true
+  }
+ ],
+ "observations": {
+  "1e308 * 10.0": "inf",
+  "infinity - infinity": "nan"
+ },
+ "browser": {
+  "web": [
+   [
+    "tests/builtins.kilat",
+    true
+   ],
+   [
+    "tests/json.kilat",
+    true
+   ],
+   [
+    "tests/language.kilat",
+    true
+   ],
+   [
+    "tests/tour.kilat",
+    true
+   ],
+   [
+    "tests/units.kilat",
+    true
+   ],
+   [
+    "examples/beam_deflection.kilat",
+    true
+   ],
+   [
+    "examples/bolt_joint.kilat",
+    true
+   ],
+   [
+    "examples/bom_mass.kilat",
+    true
+   ],
+   [
+    "examples/hello.kilat",
+    true
+   ],
+   [
+    "examples/shaft_power.kilat",
+    true
+   ],
+   [
+    "check finds a unit error",
+    true
+   ],
+   [
+    "check does not run the program",
+    true
+   ],
+   [
+    "run reports a compile error",
+    true
+   ],
+   [
+    "runtime error keeps earlier output",
+    true
+   ],
+   [
+    "fuel limit stops an endless loop",
+    true
+   ],
+   [
+    "memory limit stops a growing list",
+    true
+   ],
+   [
+    "stop signal ends an endless loop",
+    true
+   ],
+   [
+    "stop signal ends a loop of slow turns",
+    true
+   ],
+   [
+    "stop signal ends a loop of host calls",
+    true
+   ],
+   [
+    "host request is refused by default",
+    true
+   ],
+   [
+    "host function answers",
+    true
+   ],
+   [
+    "async host function answers",
+    true
+   ],
+   [
+    "host function that throws gives Err",
+    true
+   ],
+   [
+    "input is refused without a host",
+    true
+   ],
+   [
+    "clock works without a host",
+    true
+   ],
+   [
+    "files option feeds import",
+    true
+   ],
+   [
+    "import without the file is an error",
+    true
+   ],
+   [
+    "printLast prints the final value",
+    true
+   ],
+   [
+    "without printLast nothing is printed",
+    true
+   ],
+   [
+    "text survives the trip",
+    true
+   ],
+   [
+    "output arrives in pieces",
+    true
+   ],
+   [
+    "seed 7",
+    true
+   ],
+   [
+    "seed 7 again",
+    true
+   ],
+   [
+    "seed 8",
+    true
+   ],
+   [
+    "very deep nesting is contained",
+    true
+   ],
+   [
+    "a run after that still works",
+    true
+   ],
+   [
+    "the same seed repeats and another seed differs",
+    true
+   ]
+  ],
+  "pages": [
+   [
+    "playground: the page loads and runs the first example",
+    true
+   ],
+   [
+    "playground: the picker offers every example",
+    true
+   ],
+   [
+    "playground: example: Hello, units",
+    true
+   ],
+   [
+    "playground: example: Bolted joint",
+    true
+   ],
+   [
+    "playground: example: Motor shaft",
+    true
+   ],
+   [
+    "playground: example: Cantilever beam",
+    true
+   ],
+   [
+    "playground: example: Bill of materials",
+    true
+   ],
+   [
+    "playground: example: A unit mistake, caught",
+    true
+   ],
+   [
+    "playground: Check finds nothing wrong and runs nothing",
+    true
+   ],
+   [
+    "playground: Check reports a unit mistake",
+    true
+   ],
+   [
+    "playground: a runtime error keeps the output before it",
+    true
+   ],
+   [
+    "playground: Stop ends a program that is still working",
+    true
+   ],
+   [
+    "playground: Stop ends a program that keeps asking the page for the time",
+    true
+   ],
+   [
+    "playground: an endless loop is stopped at the limit",
+    true
+   ],
+   [
+    "playground: Ctrl+Enter runs the program",
+    true
+   ],
+   [
+    "playground: Tab indents, and Esc then Tab leaves the editor",
+    true
+   ],
+   [
+    "playground: line numbers follow the program",
+    true
+   ],
+   [
+    "playground: a copied link opens the same program",
+    true
+   ],
+   [
+    "playground: the theme button switches and remembers the theme",
+    true
+   ],
+   [
+    "playground: input() asks the person at the page",
+    true
+   ],
+   [
+    "playground: a program cannot reach files or the network",
+    true
+   ],
+   [
+    "playground: the page loads nothing from other servers",
+    true
+   ],
+   [
+    "playground: a wide screen puts the program beside the result",
+    true
+   ],
+   [
+    "playground: a phone gets one column and no sideways scrolling",
+    true
+   ],
+   [
+    "Cairn plugin: main.js is within Cairn's size limit",
+    true
+   ],
+   [
+    "Cairn plugin: main.js loads the way Cairn loads a plugin",
+    true
+   ],
+   [
+    "Cairn plugin: the plugin starts and registers its block, commands and style",
+    true
+   ],
+   [
+    "Cairn plugin: a block shows its program at once, then the result",
+    true
+   ],
+   [
+    "Cairn plugin: block: Hello, units",
+    true
+   ],
+   [
+    "Cairn plugin: block: Bolted joint",
+    true
+   ],
+   [
+    "Cairn plugin: block: Motor shaft",
+    true
+   ],
+   [
+    "Cairn plugin: block: Cantilever beam",
+    true
+   ],
+   [
+    "Cairn plugin: block: Bill of materials",
+    true
+   ],
+   [
+    "Cairn plugin: block: A unit mistake, caught",
+    true
+   ],
+   [
+    "Cairn plugin: a bare expression shows its value",
+    true
+   ],
+   [
+    "Cairn plugin: text printed by a program is never treated as HTML",
+    true
+   ],
+   [
+    "Cairn plugin: an endless loop in a note is stopped",
+    true
+   ],
+   [
+    "Cairn plugin: drawing the same block again reuses the result",
+    true
+   ],
+   [
+    "Cairn plugin: a program that keeps copying a long text is stopped, and the page stays usable",
+    true
+   ],
+   [
+    "Cairn plugin: a program that keeps asking for the time is stopped by the clock, and the page stays usable",
+    true
+   ],
+   [
+    "Cairn plugin: the insert command gives a block that works",
+    true
+   ],
+   [
+    "Cairn plugin: the run-again command asks Cairn to draw the note again",
+    true
+   ],
+   [
+    "Cairn plugin: the plugin fetches nothing while it works",
+    true
+   ],
+   [
+    "Cairn plugin: turning the plugin off does not fail",
+    true
+   ]
+  ],
+  "wasm_agrees": [
+   [
+    "tests/builtins.kilat",
+    true
+   ],
+   [
+    "tests/json.kilat",
+    true
+   ],
+   [
+    "tests/language.kilat",
+    true
+   ],
+   [
+    "tests/tour.kilat",
+    true
+   ],
+   [
+    "tests/units.kilat",
+    true
+   ],
+   [
+    "examples/beam_deflection.kilat",
+    true
+   ],
+   [
+    "examples/bolt_joint.kilat",
+    true
+   ],
+   [
+    "examples/bom_mass.kilat",
+    true
+   ],
+   [
+    "examples/hello.kilat",
+    true
+   ],
+   [
+    "examples/shaft_power.kilat",
+    true
+   ]
+  ],
+  "failures": [],
+  "timings": {
+   "playgroundLongestFreezeMs": 154,
+   "playgroundLimitMs": 104,
+   "pluginCharacters": 352472,
+   "pluginFirstResultMs": 165,
+   "pluginReadyMs": 2124,
+   "pluginLimitMs": 42,
+   "pluginRedrawMs": 17,
+   "pluginLongestFreezeMs": 233,
+   "pluginLongTextLimitMs": 2933,
+   "pluginTimeLimitMs": 10071
+  }
+ },
+ "failures": []
+}

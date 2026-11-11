@@ -1,0 +1,5 @@
+// BUG (units): a plain 90 is passed as a speed (km/h was meant, m/s is assumed)
+fn braking_distance(speed: m/s, decel: m/s^2) -> m {
+    speed ^ 2 / (2 * decel)
+}
+print(braking_distance(90, 7.5 m/s^2))

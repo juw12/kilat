@@ -1,0 +1,162 @@
+[
+  {
+    "name": "units_add_length_to_mass",
+    "category": "units",
+    "description": "adds a mass to a length",
+    "expected_error": "unit mismatch: cannot add m and kg",
+    "python_twin": "runs and prints a wrong or meaningless answer: 120.4",
+    "mypy_strict": "not caught"
+  },
+  {
+    "name": "units_pressure_as_force",
+    "category": "units",
+    "description": "passes a pressure where a force is expected",
+    "expected_error": "expected N, found Pa",
+    "python_twin": "runs and prints a wrong or meaningless answer: 3.1 MPa",
+    "mypy_strict": "not caught"
+  },
+  {
+    "name": "units_compare_stress_with_force",
+    "category": "units",
+    "description": "compares a load (force) with a yield strength (pressure)",
+    "expected_error": "unit mismatch: cannot compare N and Pa",
+    "python_twin": "runs and prints a wrong or meaningless answer: safe",
+    "mypy_strict": "not caught"
+  },
+  {
+    "name": "units_wrong_formula",
+    "category": "units",
+    "description": "stress is force divided by area, here it is multiplied",
+    "expected_error": "expected Pa, found kg*m^3/s^2",
+    "python_twin": "runs and prints a wrong or meaningless answer: 2000000.00 MPa",
+    "mypy_strict": "not caught"
+  },
+  {
+    "name": "units_plain_number_as_speed",
+    "category": "units",
+    "description": "a plain 90 is passed as a speed (km/h was meant, m/s is assumed)",
+    "expected_error": "expected m/s, found Int",
+    "python_twin": "runs and prints a wrong or meaningless answer: 540.0",
+    "mypy_strict": "not caught"
+  },
+  {
+    "name": "name_typo_in_variable",
+    "category": "names",
+    "description": "`diametre` is a typo for `diameter`",
+    "expected_error": "unknown name `diametre`",
+    "python_twin": "crashes at run time: NameError",
+    "mypy_strict": "caught: Name \"diametre\" is not defined; did you mean \"diameter\"?  [name-defined]"
+  },
+  {
+    "name": "name_undefined_function",
+    "category": "names",
+    "description": "`pritn` is a typo for `print`",
+    "expected_error": "unknown function `pritn`",
+    "python_twin": "crashes at run time: NameError",
+    "mypy_strict": "caught: Name \"pritn\" is not defined; did you mean \"print\"?  [name-defined]"
+  },
+  {
+    "name": "name_wrong_field",
+    "category": "names",
+    "description": "the field is `mass`, not `mas`",
+    "expected_error": "`Part` has no field `mas`",
+    "python_twin": "crashes at run time: AttributeError",
+    "mypy_strict": "caught: \"Part\" has no attribute \"mas\"; maybe \"mass\"?  [attr-defined]"
+  },
+  {
+    "name": "name_typo_in_named_argument",
+    "category": "names",
+    "description": "`nmae` is a typo for the field `name`",
+    "expected_error": "`Part` has no field `nmae`",
+    "python_twin": "crashes at run time: TypeError",
+    "mypy_strict": "caught: Unexpected keyword argument \"nmae\" for \"Part\"  [call-arg]"
+  },
+  {
+    "name": "type_wrong_argument_count",
+    "category": "types",
+    "description": "the function needs four arguments, three are given",
+    "expected_error": "takes 4 argument(s), found 3",
+    "python_twin": "crashes at run time: TypeError",
+    "mypy_strict": "caught: Missing positional argument \"inertia\" in call to \"beam_deflection\"  [call-arg]"
+  },
+  {
+    "name": "type_text_plus_number",
+    "category": "types",
+    "description": "joins text and a number with +",
+    "expected_error": "cannot add Str and Int",
+    "python_twin": "crashes at run time: TypeError",
+    "mypy_strict": "caught: Unsupported operand types for + (\"str\" and \"int\")  [operator]"
+  },
+  {
+    "name": "type_len_of_number",
+    "category": "types",
+    "description": "asks for the length of a number",
+    "expected_error": "`len` does not work on Int",
+    "python_twin": "crashes at run time: TypeError",
+    "mypy_strict": "caught: Argument 1 to \"len\" has incompatible type \"int\"; expected \"Sized\"  [arg-type]"
+  },
+  {
+    "name": "type_return_mismatch",
+    "category": "types",
+    "description": "the function promises a number but returns text on one path",
+    "expected_error": "return value: expected Float, found Str",
+    "python_twin": "runs and prints a wrong or meaningless answer: no load",
+    "mypy_strict": "caught: Incompatible return value type (got \"str\", expected \"float\")  [return-value]"
+  },
+  {
+    "name": "type_wrong_map_key",
+    "category": "types",
+    "description": "the map is keyed by part name but is read with a number",
+    "expected_error": "map key: expected Str, found Int",
+    "python_twin": "crashes at run time: KeyError",
+    "mypy_strict": "caught: Invalid index type \"int\" for \"dict[str, int]\"; expected type \"str\"  [index]"
+  },
+  {
+    "name": "type_text_in_number_list",
+    "category": "types",
+    "description": "a text value slipped into a list of numbers",
+    "expected_error": "list item: expected Float, found Str",
+    "python_twin": "crashes at run time: TypeError",
+    "mypy_strict": "caught: List item 2 has incompatible type \"str\"; expected \"float\"  [list-item]"
+  },
+  {
+    "name": "safety_missing_value_used",
+    "category": "safety",
+    "description": "find() may find nothing, the result is used as if it were always a number",
+    "expected_error": "cannot add Int? and Int",
+    "python_twin": "crashes at run time: TypeError",
+    "mypy_strict": "caught: Unsupported operand types for + (\"None\" and \"int\")  [operator]"
+  },
+  {
+    "name": "safety_case_not_handled",
+    "category": "safety",
+    "description": "the Welded case is not handled",
+    "expected_error": "does not cover: Welded",
+    "python_twin": "runs and prints a wrong or meaningless answer: None",
+    "mypy_strict": "caught: Missing return statement  [return]"
+  },
+  {
+    "name": "safety_constant_changed",
+    "category": "safety",
+    "description": "changes a value that was declared as fixed",
+    "expected_error": "cannot assign to `safety_factor`",
+    "python_twin": "runs and prints a wrong or meaningless answer: 1.0",
+    "mypy_strict": "caught: Cannot assign to final name \"SAFETY_FACTOR\"  [misc]"
+  },
+  {
+    "name": "safety_error_ignored",
+    "category": "safety",
+    "description": "the result of parsing is thrown away, so a failure goes unnoticed",
+    "expected_error": "unused Result",
+    "python_twin": "runs and prints a wrong or meaningless answer: parsed",
+    "mypy_strict": "not caught"
+  },
+  {
+    "name": "safety_missing_return",
+    "category": "safety",
+    "description": "no value is returned when the load is small",
+    "expected_error": "return value: expected Str, found ()",
+    "python_twin": "runs and prints a wrong or meaningless answer: None",
+    "mypy_strict": "caught: Missing return statement  [return]"
+  }
+]

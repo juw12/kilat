@@ -1,0 +1,9 @@
+// FIXED (units): compares a load (force) with a yield strength (pressure)
+let yield_strength = 250 MPa
+let load = 12 kN
+let stress = load / (8 mm * 5 mm)
+if stress < yield_strength {
+    print("safe")
+} else {
+    print("overloaded")
+}

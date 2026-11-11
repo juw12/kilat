@@ -1,0 +1,6 @@
+// FIXED (units): passes a pressure where a force is expected
+fn bolt_stress(force: N, area: mm^2) -> Pa {
+    force / area
+}
+let preload = 10.4 kN
+print("{bolt_stress(preload, 58 mm^2):MPa.1}")

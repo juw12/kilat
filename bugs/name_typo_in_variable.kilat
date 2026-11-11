@@ -1,0 +1,4 @@
+// BUG (names): `diametre` is a typo for `diameter`
+let diameter = 25 mm
+let radius = diametre / 2
+print(radius)

@@ -1,0 +1,4 @@
+// FIXED (names): `nmae` is a typo for the field `name`
+struct Part { name: Str, qty: Int }
+let p = Part(name: "bolt", qty: 4)
+print(p.name)

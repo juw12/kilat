@@ -1,0 +1,133 @@
+
+// control flow
+var total = 0
+for i in 0..5 { total += i }
+assert_eq(total, 10)
+total = 0
+for i in 1..=5 {
+    if i == 3 { continue }
+    if i == 5 { break }
+    total += i
+}
+assert_eq(total, 7)
+var n = 0
+while n < 10 { n += 3 }
+assert_eq(n, 12)
+let grade = if n > 10 { "high" } else if n > 5 { "mid" } else { "low" }
+assert_eq(grade, "high")
+
+// tuples and destructuring
+let (a, b) = (1, "x")
+let pair = (2.5, [1, 2])
+assert_eq(pair.0, 2.5)
+assert_eq(pair.1[1], 2)
+assert_eq(b + str(a), "x1")
+
+// structs
+struct Point { x: Float, y: Float }
+struct Box[T] { item: T, label: Str }
+fn norm(p: Point) -> Float { sqrt(p.x ^ 2 + p.y ^ 2) }
+let p = Point(x: 3.0, y: 4.0)
+assert_eq(norm(p), 5.0)
+assert_eq(p.norm(), 5.0)
+p.x = 6.0
+assert_eq(p.x, 6.0)
+let bx = Box(item: 42, label: "answer")
+assert_eq(bx.item + 1, 43)
+print(p, bx)
+assert_eq(Point(1.0, 2.0) == Point(1.0, 2.0), true)
+
+// enums and match
+enum Cmd { Move(Int, Int), Say(Str), Stop }
+fn describe(c: Cmd) -> Str {
+    match c {
+        Move(0, 0) => "stay"
+        Move(dx, dy) if dx == dy => "diagonal {dx}"
+        Move(dx, _) => "move {dx}"
+        Say(text) => "say " + text
+        Stop => "stop"
+    }
+}
+assert_eq(describe(Move(0, 0)), "stay")
+assert_eq(describe(Move(2, 2)), "diagonal 2")
+assert_eq(describe(Move(1, 5)), "move 1")
+assert_eq(describe(Say("hi")), "say hi")
+assert_eq(describe(Stop), "stop")
+fn classify(n: Int) -> Str {
+    match n {
+        0 => "zero"
+        1 => "one"
+        _ => if n < 0 { "negative" } else { "many" }
+    }
+}
+assert_eq(classify(0) + classify(1) + classify(-5) + classify(9), "zeroonenegativemany")
+let label = match (1, "a") {
+    (1, "a") => "first"
+    (_, s) => s
+}
+assert_eq(label, "first")
+print(Move(1, 2), Say("x"), Stop, Some(1), [None, Some(2)])
+
+// option and result
+fn find_part(name: Str) -> Int? {
+    if name == "bolt" { Some(16) } else { None }
+}
+assert_eq(find_part("bolt") ?? 0, 16)
+assert_eq(find_part("nut") ?? 0, 0)
+assert_eq(is_some(find_part("bolt")), true)
+assert_eq(is_none(find_part("nut")), true)
+assert_eq(unwrap(find_part("bolt")), 16)
+assert_eq(unwrap_or(find_part("nut"), -1), -1)
+fn parse_pair(text: Str) -> Result[(Int, Int)] {
+    let bits = text.split(",")
+    if len(bits) != 2 { return Err("expected two numbers") }
+    let left = match to_int(bits[0]) {
+        Some(v) => v
+        None => return Err("bad left")
+    }
+    let right = match to_int(bits[1]) {
+        Some(v) => v
+        None => return Err("bad right")
+    }
+    Ok((left, right))
+}
+fn sum_pair(text: Str) -> Result[Int] {
+    let (l, r) = parse_pair(text)?
+    Ok(l + r)
+}
+assert_eq(sum_pair("3,4"), Ok(7))
+assert_eq(sum_pair("3"), Err("expected two numbers"))
+assert_eq(sum_pair("3,x"), Err("bad right"))
+assert_eq(is_ok(sum_pair("1,2")), true)
+assert_eq(is_err(sum_pair("1")), true)
+assert_eq(ok(sum_pair("1,2")), Some(3))
+assert_eq(sum_pair("x,1") ?? -1, -1)
+fn first_char(s: Str) -> Str? {
+    let c = first(chars(s))?
+    Some(upper(c))
+}
+assert_eq(first_char("abc"), Some("A"))
+assert_eq(first_char(""), None)
+
+// closures and generics
+fn make_adder(k: Int) -> fn(Int) -> Int { |x| x + k }
+let add5 = make_adder(5)
+assert_eq(add5(10), 15)
+fn apply_twice[T](f: fn(T) -> T, x: T) -> T { f(f(x)) }
+assert_eq(apply_twice(|x| x * 3, 2), 18)
+assert_eq(apply_twice(|s| s + "!", "hi"), "hi!!")
+fn largest[T: Ord](xs: List[T]) -> T { max(xs) }
+assert_eq(largest([3, 9, 2]), 9)
+assert_eq(largest(["b", "z"]), "z")
+fn fact(k: Int) -> Int { if k <= 1 { 1 } else { k * fact(k - 1) } }
+assert_eq(fact(20), 2432902008176640000)
+fn is_even(k: Int) -> Bool { if k == 0 { true } else { is_odd(k - 1) } }
+fn is_odd(k: Int) -> Bool { if k == 0 { false } else { is_even(k - 1) } }
+assert_eq(is_even(10), true)
+
+// globals
+var counter = 0
+fn bump() { counter += 1 }
+bump(); bump()
+assert_eq(counter, 2)
+print("language ok")

@@ -1,0 +1,5 @@
+// The smallest useful program: one calculation with units.
+let force = 1200 N
+let area = 58 mm^2
+let stress = force / area
+print("stress = {stress:MPa.1}")

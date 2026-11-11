@@ -1,0 +1,5 @@
+// BUG (units): stress is force divided by area, here it is multiplied
+let force = 5 kN
+let area = 40 mm * 10 mm
+let stress: Pa = force * area
+print("{stress:MPa.2}")

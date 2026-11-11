@@ -1,0 +1,37 @@
+// Matrix multiply on lists of lists of Float.
+fn make(n: Int, scale: Float) -> List[List[Float]] {
+    var rows: List[List[Float]] = []
+    for i in 0..n {
+        var row: List[Float] = []
+        for j in 0..n {
+            row.push(scale * (i - j) * (i + j))
+        }
+        rows.push(row)
+    }
+    rows
+}
+
+fn matmul(a: List[List[Float]], b: List[List[Float]], n: Int) -> List[List[Float]] {
+    var out: List[List[Float]] = []
+    for i in 0..n {
+        let a_row = a[i]
+        var row = fill(n, 0.0)
+        for j in 0..n {
+            var total = 0.0
+            for k in 0..n {
+                total += a_row[k] * b[k][j]
+            }
+            row[j] = total
+        }
+        out.push(row)
+    }
+    out
+}
+
+let n = 160
+let a = make(n, 1.0 / n / n)
+let b = make(n, 1.0 / n / n)
+let c = matmul(a, b, n)
+let middle = c[n div 2][n div 2]
+let corner = c[0][n - 1]
+print("{middle:.9} {corner:.9}")

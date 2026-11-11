@@ -1,0 +1,15 @@
+// Sorting one million pseudo-random integers (LCG data).
+fn make(n: Int) -> List[Int] {
+    var xs: List[Int] = []
+    var seed = 42
+    for i in 0..n {
+        seed = (seed * 1103515245 + 12345) % 2147483648
+        xs.push(seed % 1000000)
+    }
+    xs
+}
+
+let n = 1000000
+let xs = make(n)
+let ordered = sort(xs)
+print("{ordered[0]} {ordered[n div 2]} {ordered[n - 1]} {sum(ordered)}")

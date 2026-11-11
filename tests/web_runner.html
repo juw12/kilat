@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kilat web runner</title>
+</head>
+<body>
+<pre id="log">loading</pre>
+<script>
+// Problems that happen before the module below gets going (a syntax error in kilat.js,
+// a file that does not load) are reported too, so the driver does not wait for nothing.
+function reportFatal(message) {
+  fetch("/report", { method: "POST", body: JSON.stringify({ fatal: String(message) }) });
+}
+window.addEventListener("error", (event) => reportFatal(event.message || "a script failed to load"), true);
+window.addEventListener("unhandledrejection", (event) => reportFatal(event.reason));
+</script>
+<script type="module">
+// Runs the cases served at /cases.json through docs/kilat.js and posts the results to
+// /report. Driven by tests/web_test.py; not meant to be opened by hand.
+import { loadKilat } from "../docs/kilat.js";
+
+const log = document.getElementById("log");
+
+const hosts = {
+  echo: (name, payload) => `echo:${name}:${payload}`,
+  "async-echo": async (name, payload) => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    return `echo:${name}:${payload}`;
+  },
+  throw: () => {
+    throw new Error("nope");
+  },
+};
+
+async function runCase(kilat, testCase) {
+  const started = performance.now();
+  const chunks = [];
+  const options = { ...(testCase.options ?? {}) };
+  if (testCase.host) {
+    options.host = hosts[testCase.host];
+  }
+  options.onOutput = (piece) => chunks.push(piece);
+  if (testCase.abortAfterMs) {
+    const controller = new AbortController();
+    options.signal = controller.signal;
+    setTimeout(() => controller.abort(), testCase.abortAfterMs);
+  }
+  const result = testCase.mode === "check"
+    ? await kilat.check(testCase.source, options)
+    : await kilat.run(testCase.source, options);
+  return {
+    name: testCase.name,
+    ...result,
+    chunkCount: chunks.length,
+    chunksMatchOutput: chunks.join("") === result.output,
+    milliseconds: Math.round(performance.now() - started),
+  };
+}
+
+async function main() {
+  const cases = await (await fetch("/cases.json")).json();
+  const kilat = await loadKilat();
+  const results = [];
+  for (const testCase of cases) {
+    log.textContent = `running ${testCase.name}`;
+    try {
+      results.push(await runCase(kilat, testCase));
+    } catch (problem) {
+      results.push({ name: testCase.name, threw: String((problem && problem.stack) || problem) });
+    }
+  }
+  return { version: kilat.version, userAgent: navigator.userAgent, results };
+}
+
+main()
+  .catch((problem) => ({ fatal: String((problem && problem.stack) || problem) }))
+  .then((report) => {
+    log.textContent = JSON.stringify(report, null, 2);
+    return fetch("/report", { method: "POST", body: JSON.stringify(report) });
+  });
+</script>
+</body>
+</html>

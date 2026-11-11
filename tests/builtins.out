@@ -1,0 +1,8 @@
+strings ok
+lists ok
+prelude ok
+b 12
+c 3
+["x": [1, 2]] [1: "a"]
+maps ok
+math ok

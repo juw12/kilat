@@ -1,0 +1,5 @@
+// FIXED (names): `pritn` is a typo for `print`
+let parts = ["bolt", "nut", "washer"]
+for part in parts {
+    print(part)
+}

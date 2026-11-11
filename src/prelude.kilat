@@ -1,0 +1,310 @@
+// The Kilat prelude. It is loaded before every program.
+// The order of the three enums below is fixed: the runtime knows their variant numbers.
+
+enum Option[T] { None, Some(T) }
+enum Result[T] { Ok(T), Err(Str) }
+enum Json { JNull, JBool(Bool), JNum(Float), JStr(Str), JList(List[Json]), JObj(Map[Str, Json]) }
+
+let pi = 3.141592653589793
+let tau = 6.283185307179586
+let g0 = 9.80665 m/s^2
+
+// ---- lists
+
+fn map[T, U](xs: List[T], f: fn(T) -> U) -> List[U] {
+    var out: List[U] = []
+    for x in xs {
+        out.push(f(x))
+    }
+    out
+}
+
+fn filter[T](xs: List[T], f: fn(T) -> Bool) -> List[T] {
+    var out: List[T] = []
+    for x in xs {
+        if f(x) {
+            out.push(x)
+        }
+    }
+    out
+}
+
+fn reduce[T, A](xs: List[T], start: A, f: fn(A, T) -> A) -> A {
+    var acc = start
+    for x in xs {
+        acc = f(acc, x)
+    }
+    acc
+}
+
+fn each[T, R](xs: List[T], f: fn(T) -> R) -> () {
+    for x in xs {
+        let _ = f(x)
+    }
+}
+
+fn any[T](xs: List[T], f: fn(T) -> Bool) -> Bool {
+    for x in xs {
+        if f(x) {
+            return true
+        }
+    }
+    false
+}
+
+fn all[T](xs: List[T], f: fn(T) -> Bool) -> Bool {
+    for x in xs {
+        if not f(x) {
+            return false
+        }
+    }
+    true
+}
+
+fn count[T](xs: List[T], f: fn(T) -> Bool) -> Int {
+    var n = 0
+    for x in xs {
+        if f(x) {
+            n += 1
+        }
+    }
+    n
+}
+
+fn find[T](xs: List[T], f: fn(T) -> Bool) -> T? {
+    for x in xs {
+        if f(x) {
+            return Some(x)
+        }
+    }
+    None
+}
+
+fn flat_map[T, U](xs: List[T], f: fn(T) -> List[U]) -> List[U] {
+    var out: List[U] = []
+    for x in xs {
+        out.extend(f(x))
+    }
+    out
+}
+
+fn zip[A, B](xs: List[A], ys: List[B]) -> List[(A, B)] {
+    var out: List[(A, B)] = []
+    let n = min(len(xs), len(ys))
+    for i in 0..n {
+        out.push((xs[i], ys[i]))
+    }
+    out
+}
+
+fn enumerate[T](xs: List[T]) -> List[(Int, T)] {
+    var out: List[(Int, T)] = []
+    var i = 0
+    for x in xs {
+        out.push((i, x))
+        i += 1
+    }
+    out
+}
+
+fn sort_by[T, S: Ord](xs: List[T], f: fn(T) -> S) -> List[T] {
+    $sort_keys(xs, map(xs, f))
+}
+
+fn group_by[T, G: Key](xs: List[T], f: fn(T) -> G) -> Map[G, List[T]] {
+    var out: Map[G, List[T]] = [:]
+    for x in xs {
+        let k = f(x)
+        match get(out, k) {
+            Some(group) => group.push(x)
+            None => out[k] = [x]
+        }
+    }
+    out
+}
+
+// ---- Option and Result
+
+fn unwrap[T](o: T?) -> T {
+    match o {
+        Some(v) => v
+        None => panic("unwrap of None")
+    }
+}
+
+fn unwrap[T](r: Result[T]) -> T {
+    match r {
+        Ok(v) => v
+        Err(e) => panic("unwrap of Err: {e}")
+    }
+}
+
+fn unwrap_or[T](o: T?, fallback: T) -> T {
+    match o {
+        Some(v) => v
+        None => fallback
+    }
+}
+
+fn unwrap_or[T](r: Result[T], fallback: T) -> T {
+    match r {
+        Ok(v) => v
+        Err(_) => fallback
+    }
+}
+
+fn is_some[T](o: T?) -> Bool {
+    match o {
+        Some(_) => true
+        None => false
+    }
+}
+
+fn is_none[T](o: T?) -> Bool {
+    match o {
+        Some(_) => false
+        None => true
+    }
+}
+
+fn is_ok[T](r: Result[T]) -> Bool {
+    match r {
+        Ok(_) => true
+        Err(_) => false
+    }
+}
+
+fn is_err[T](r: Result[T]) -> Bool {
+    match r {
+        Ok(_) => false
+        Err(_) => true
+    }
+}
+
+fn ok[T](r: Result[T]) -> T? {
+    match r {
+        Ok(v) => Some(v)
+        Err(_) => None
+    }
+}
+
+// ---- JSON values
+
+// `get` and `at` never fail: a missing key, a bad index or the wrong kind of
+// value gives JNull, so lookups chain: j.get("a").at(0).as_str() ?? "none"
+fn get(j: Json, key: Str) -> Json {
+    match j {
+        JObj(fields) => get_or(fields, key, JNull)
+        _ => JNull
+    }
+}
+
+fn at(j: Json, i: Int) -> Json {
+    match j {
+        JList(xs) => {
+            if i >= -len(xs) and i < len(xs) {
+                xs[i]
+            } else {
+                JNull
+            }
+        }
+        _ => JNull
+    }
+}
+
+fn as_str(j: Json) -> Str? {
+    match j {
+        JStr(s) => Some(s)
+        _ => None
+    }
+}
+
+fn as_num(j: Json) -> Float? {
+    match j {
+        JNum(x) => Some(x)
+        _ => None
+    }
+}
+
+fn as_int(j: Json) -> Int? {
+    match j {
+        JNum(x) if abs(x) < 9.0e15 and x % 1.0 == 0.0 => Some(int(x))
+        _ => None
+    }
+}
+
+fn as_bool(j: Json) -> Bool? {
+    match j {
+        JBool(b) => Some(b)
+        _ => None
+    }
+}
+
+fn as_list(j: Json) -> List[Json]? {
+    match j {
+        JList(xs) => Some(xs)
+        _ => None
+    }
+}
+
+fn as_obj(j: Json) -> Map[Str, Json]? {
+    match j {
+        JObj(fields) => Some(fields)
+        _ => None
+    }
+}
+
+// ---- the outside world (every one of these goes through the host gate)
+
+fn read_file(path: Str) -> Result[Str] {
+    host("read_file", path)
+}
+
+fn write_file(path: Str, text: Str) -> Result[Str] {
+    host("write_file", path + "\n" + text)
+}
+
+fn http_get(url: Str) -> Result[Str] {
+    host("http_get", url)
+}
+
+fn ask_ai(prompt: Str) -> Result[Str] {
+    host("ask_ai", prompt)
+}
+
+fn input(prompt: Str) -> Str {
+    host("input", prompt) ?? ""
+}
+
+fn clock() -> Float {
+    to_float(host("clock", "") ?? "") ?? 0.0
+}
+
+fn unix_time() -> Float {
+    to_float(host("time", "") ?? "") ?? 0.0
+}
+
+fn args() -> List[Str] {
+    var out: List[Str] = []
+    let text = host("args", "") ?? ""
+    if not is_empty(text) {
+        out = split(text, "\n")
+    }
+    out
+}
+
+// ---- numbers
+
+fn rand_normal() -> Float {
+    let u = 1.0 - rand()
+    let v = rand()
+    sqrt(-2.0 * ln(u)) * cos(tau * v)
+}
+
+fn celsius(c: Float) -> K {
+    (c + 273.15) * 1 K
+}
+
+fn to_celsius(t: K) -> Float {
+    (t in K) - 273.15
+}

@@ -1,0 +1,3 @@
+// FIXED (types): the map is keyed by part name but is read with a number
+let stock = ["bolt": 120, "nut": 300]
+print(stock["bolt"])

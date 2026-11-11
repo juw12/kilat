@@ -1,0 +1,11 @@
+// FIXED (safety): the result of parsing is thrown away, so a failure goes unnoticed
+fn parse_length(text: Str) -> Result[Float] {
+    match to_float(text) {
+        Some(v) => Ok(v)
+        None => Err("not a number: " + text)
+    }
+}
+match parse_length("12,5") {
+    Ok(v) => print("parsed {v}")
+    Err(e) => print("failed: " + e)
+}

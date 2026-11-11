@@ -1,0 +1,10 @@
+// FIXED (safety): the Welded case is not handled
+enum Joint { Bolted(Int), Welded(Float), Glued }
+fn describe(j: Joint) -> Str {
+    match j {
+        Bolted(n) => "bolted with {n} bolts"
+        Welded(throat) => "welded, throat {throat} mm"
+        Glued => "glued"
+    }
+}
+print(describe(Welded(4.0)))

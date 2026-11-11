@@ -1,0 +1,4 @@
+// FIXED (types): joins text and a number with +
+let count = 16
+let label = "bolts: {count}"
+print(label)

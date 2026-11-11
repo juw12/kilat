@@ -1,0 +1,66 @@
+
+struct Part { name: Str, mass: kg, qty: Int }
+enum Shape { Circle(Float), Rect(Float, Float), Empty }
+
+fn area(s: Shape) -> Float {
+    match s {
+        Circle(r) => pi * r ^ 2
+        Rect(w, h) => w * h
+        Empty => 0.0
+    }
+}
+
+fn safe_div(a: Float, b: Float) -> Result[Float] {
+    if b == 0.0 { return Err("division by zero") }
+    Ok(a / b)
+}
+
+fn half_of(a: Float, b: Float) -> Result[Float] {
+    let q = safe_div(a, b)?
+    Ok(q / 2)
+}
+
+let parts = [
+    Part(name: "bracket", mass: 0.25 kg, qty: 4),
+    Part(name: "bolt M6", mass: 12 g, qty: 16),
+    Part("plate", 1.2 kg, 1),
+]
+var total = 0 kg
+for p in parts {
+    total += p.mass * p.qty
+}
+print("total mass = {total:kg.3}")
+print("heaviest = {parts.sort_by(|p| p.mass).last().unwrap().name}")
+print(area(Circle(1.0)), area(Rect(2.0, 3.0)), area(Empty))
+print(half_of(9.0, 3.0), half_of(1.0, 0.0))
+print(half_of(1.0, 0.0) ?? -1.0)
+
+let torque = 40 N * 150 mm
+print("torque = {torque:N*m.2}")
+let speed = 90 km/h
+print("speed = {speed:m/s.1}, in mph {speed in mph}")
+let t: K = celsius(25.0)
+print(t, to_celsius(t))
+
+let words = "the quick brown fox jumps over the lazy dog the end".split(" ")
+var counts: Map[Str, Int] = [:]
+for w in words {
+    counts[w] = counts.get_or(w, 0) + 1
+}
+print(counts["the"], len(counts), counts.keys().sort().join(","))
+
+let j = json_parse("{{\"a\": [1, 2.5, \"x\", null, true], \"b\": {{\"c\": 7}}}}").unwrap()
+print(json_str(j))
+print(j.get("b").get("c").as_int(), j.get("a").at(1).as_num(), j.get("zz").as_str())
+
+let pairs = zip([1, 2, 3], ["a", "b", "c"])
+for (n, s) in pairs {
+    print(n, s)
+}
+print(enumerate(["x", "y"]), range(5), range(2, 10, 3))
+print(10 div 3, -7 div 2, -7 % 3, 7 / 2, 2 ^ 10, 2.0 ^ 0.5)
+print("{pi:.4} {1234567.891:>14.2}| {42:<6}| {"ab":>5}|")
+let grouped = group_by([1, 2, 3, 4, 5, 6], |x| x % 3)
+print(grouped)
+print(reduce([1, 2, 3, 4], 0, |a, b| a + b), any([1, 2], |x| x > 1), all([1, 2], |x| x > 1))
+print(upper("abc"), "Hello".len(), "a,b".replace(",", ";"), trim("  x "), "abc".slice(1, 3), "é".char_code())

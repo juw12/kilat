@@ -1,0 +1,5 @@
+// FIXED (types): the function needs four arguments, three are given
+fn beam_deflection(load: N, length: m, modulus: Pa, inertia: m^4) -> m {
+    load * length ^ 3 / (3 * modulus * inertia)
+}
+print(beam_deflection(500 N, 1.2 m, 200 GPa, 8.0e-7 m^4))

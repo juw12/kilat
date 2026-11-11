@@ -1,0 +1,22 @@
+[package]
+name = "kilat"
+version = "0.1.0"
+edition = "2021"
+description = "Kilat: a small, fast, unit-aware, sandboxed scripting language"
+license = "MIT"
+repository = "https://github.com/juw12/kilat"
+
+[lib]
+name = "kilat_core"
+path = "src/lib.rs"
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "kilat"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true

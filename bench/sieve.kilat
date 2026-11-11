@@ -1,0 +1,26 @@
+// Sieve of Eratosthenes: list of Bool, nested while loops.
+fn sieve(n: Int) -> Int {
+    var flags = fill(n + 1, true)
+    flags[0] = false
+    flags[1] = false
+    var i = 2
+    while i * i <= n {
+        if flags[i] {
+            var j = i * i
+            while j <= n {
+                flags[j] = false
+                j += i
+            }
+        }
+        i += 1
+    }
+    var primes = 0
+    for flag in flags {
+        if flag {
+            primes += 1
+        }
+    }
+    primes
+}
+
+print(sieve(2000000))

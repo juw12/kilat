@@ -1,0 +1,29 @@
+bracket 0.25 Some(true)
+20 Some(2)
+{
+  "name": "bracket",
+  "mass_kg": 0.25,
+  "holes": [
+    6,
+    6,
+    8
+  ],
+  "ok": true,
+  "note": null,
+  "nested": {
+    "deep": [
+      1,
+      [
+        2,
+        3
+      ]
+    ]
+  }
+}
+Err("invalid JSON at line 1, column 7: unexpected end of the text")
+Err("invalid JSON at line 1, column 7: unknown word (expected true, false or null)")
+{"id":7,"tags":["a\"b",null,false],"x":1.5e300}
+true
+1.0 0.3 1e21 1.5e-7 123456789012000.0 1e16 33.3333333333 0.0 0.000025 1000000000000000.0
+0.30 0.66667     1234.5|    7|7   | -1.01 1.01 1 2 3
+2.68 1.01 -2.68 1200.0 0.3

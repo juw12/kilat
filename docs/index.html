@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kilat playground: engineering calculations with checked units</title>
+<meta name="description" content="Try Kilat in your browser. A small language for engineering calculations that checks units and types before the program runs.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23b45309'/%3E%3Cpath d='M10 7v18M22 7l-10 9 10 9' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script>
+  (function () {
+    var stored = null;
+    try {
+      stored = localStorage.getItem("kilat-theme");
+    } catch (error) {}
+    var dark = stored ? stored === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  })();
+</script>
+<style>
+  :root {
+    --paper: #fbfaf7;
+    --panel: #fffefb;
+    --ink: #1c1b19;
+    --muted: #625e56;
+    --line: #d9d5cc;
+    --tick: #b3ada1;
+    --accent: #b45309;
+    --on-accent: #ffffff;
+    --error: #b42318;
+    --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", Menlo, "DejaVu Sans Mono", monospace;
+    --sans: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  :root[data-theme="dark"] {
+    --paper: #161513;
+    --panel: #1d1b18;
+    --ink: #ece9e2;
+    --muted: #a8a297;
+    --line: #37332d;
+    --tick: #5c574e;
+    --accent: #fbbf24;
+    --on-accent: #1c1b19;
+    --error: #ff8f80;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); color: var(--ink); }
+  body { margin: 0; font: 16px/1.5 var(--sans); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+  a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  a:hover { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .top-row { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 32px; padding-top: 22px; padding-bottom: 14px; }
+  h1 { margin: 0; font: 700 30px/1.1 var(--mono); letter-spacing: -0.02em; }
+  .tagline { margin: 6px 0 0; max-width: 46em; color: var(--muted); }
+  .links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; font-size: 15px; }
+
+  /* The ruler: a tick every 10 px, a longer one every 50 px. */
+  .ruler {
+    height: 14px;
+    border-top: 1px solid var(--tick);
+    background-image: linear-gradient(90deg, var(--tick) 1px, transparent 1px), linear-gradient(90deg, var(--tick) 1px, transparent 1px);
+    background-size: 50px 13px, 10px 6px;
+    background-repeat: repeat-x;
+  }
+
+  button, select { font: inherit; color: inherit; }
+  button {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--ink); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; }
+  button.primary:hover:not(:disabled) { border-color: var(--ink); }
+  select { min-height: 40px; max-width: 100%; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 18px 0 14px; }
+  .toolbar label { font-size: 14px; color: var(--muted); }
+  .hint { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
+  .toolbar .hint { margin: 0 0 0 6px; }
+
+  .panes { display: grid; gap: 20px; }
+  .pane { min-width: 0; }
+  h2 { margin: 0 0 6px; font: 600 13px/1.4 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+  .editor, .result { height: 46vh; min-height: 260px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+  .editor { display: grid; grid-template-columns: auto 1fr; overflow: hidden; }
+  .editor:focus-within { border-color: var(--accent); }
+  .gutter, #editor, #output, #error { font: 14px/1.55 var(--mono); tab-size: 4; }
+  .gutter { min-width: 3.2em; padding: 12px 10px 12px 8px; overflow: hidden; border-right: 1px solid var(--line); color: var(--muted); text-align: right; white-space: pre; user-select: none; }
+  #editor { display: block; width: 100%; height: 100%; padding: 12px; border: 0; outline: 0; resize: none; background: transparent; color: inherit; white-space: pre; overflow: auto; }
+  .result { overflow: auto; padding: 12px; }
+  #output, #error { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #error { color: var(--error); }
+  #output:not(:empty) + #error { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+
+  .try { max-width: 46em; padding: 34px 0 8px; }
+  .try ol { margin: 0; padding-left: 1.3em; }
+  .try li { margin: 0 0 8px; }
+  code { font: 0.92em var(--mono); }
+  footer { padding-top: 22px; padding-bottom: 40px; font-size: 14px; color: var(--muted); }
+  footer p { margin: 0 0 4px; max-width: 60em; }
+
+  @media (min-width: 860px) {
+    .panes { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+    .editor, .result { height: min(62vh, 620px); }
+  }
+  @media (max-width: 859px) {
+    button, select { min-height: 44px; }
+    .toolbar .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap top-row">
+    <div>
+      <h1>Kilat</h1>
+      <p class="tagline">A small language for engineering calculations. Units and types are checked before the program runs.</p>
+    </div>
+    <nav class="links" aria-label="Project">
+      <a href="https://github.com/juw12/kilat">Source on GitHub</a>
+      <a href="https://github.com/juw12/kilat/blob/main/docs/LANGUAGE.md">Language guide</a>
+      <button id="theme" type="button">Dark theme</button>
+    </nav>
+  </div>
+  <div class="ruler" aria-hidden="true"></div>
+</header>
+
+<main class="wrap">
+  <div class="toolbar">
+    <label for="examples">Example</label>
+    <select id="examples"></select>
+    <button id="run" class="primary" type="button" disabled>Run</button>
+    <button id="check" type="button" disabled>Check</button>
+    <button id="stop" type="button" disabled>Stop</button>
+    <button id="share" type="button">Copy link</button>
+    <span class="hint">Ctrl+Enter runs</span>
+  </div>
+
+  <div class="panes">
+    <section class="pane" aria-labelledby="program-title">
+      <h2 id="program-title">Program</h2>
+      <div class="editor">
+        <div id="gutter" class="gutter" aria-hidden="true">1</div>
+        <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-labelledby="program-title"></textarea>
+      </div>
+      <p class="hint">Tab indents. Press Esc and then Tab to leave the editor.</p>
+    </section>
+    <section class="pane" aria-labelledby="result-title">
+      <h2 id="result-title">Result</h2>
+      <div class="result" id="result" tabindex="0" aria-labelledby="result-title">
+        <pre id="output"></pre>
+        <pre id="error" hidden></pre>
+      </div>
+      <p id="status" class="hint" role="status">Loading the interpreter.</p>
+    </section>
+  </div>
+
+  <section class="try" aria-labelledby="try-title">
+    <h2 id="try-title">Things to try</h2>
+    <ol>
+      <li>Choose <strong>A unit mistake, caught</strong> and press Run. The program is rejected before its first line runs.</li>
+      <li>In <strong>Hello, units</strong>, change <code>58 mm^2</code> to <code>58 mm</code>. The result is no longer a pressure, and Kilat says so.</li>
+      <li>Replace the program with <code>while true { }</code> and press Run. It is stopped at its limit and the page stays usable.</li>
+      <li>Press Check to look for mistakes without running anything.</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>The interpreter runs in this page as WebAssembly (about 0.7 MB). Nothing you type is uploaded, and a program cannot reach files or the network.</p>
+  <p>Limits here: 50 million loop turns and function calls, 64 MB of memory. Kilat is free software under the MIT licence.</p>
+</footer>
+
+<script type="module">
+  import { loadKilat } from "./kilat.js";
+  import { examples } from "./examples.js";
+
+  const LIMITS = { fuel: 50_000_000, memoryMb: 64 };
+  const ENDINGS = {
+    compile: "Not run. The check found a problem.",
+    runtime: "Stopped by a runtime error.",
+    fuel: "Stopped. The program ran too long (it reached the limit of loop turns and calls).",
+    memory: "Stopped. The program used too much memory.",
+    stopped: "Stopped.",
+    crash: "The interpreter failed on this program. Please report it on GitHub.",
+  };
+
+  const root = document.documentElement;
+  const byId = (id) => document.getElementById(id);
+  const editor = byId("editor");
+  const gutter = byId("gutter");
+  const output = byId("output");
+  const errorBox = byId("error");
+  const resultBox = byId("result");
+  const statusLine = byId("status");
+  const picker = byId("examples");
+  const runButton = byId("run");
+  const checkButton = byId("check");
+  const stopButton = byId("stop");
+  const shareButton = byId("share");
+  const themeButton = byId("theme");
+
+  root.dataset.state = "loading";
+  let kilat = null;
+  let controller = null;
+
+  // ---------------------------------------------------------------- editor
+  let gutterLines = 0;
+
+  function updateGutter() {
+    const lines = editor.value.split("\n").length;
+    if (lines !== gutterLines) {
+      gutter.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
+      gutterLines = lines;
+    }
+    gutter.scrollTop = editor.scrollTop;
+  }
+
+  function setProgram(text) {
+    editor.value = text;
+    editor.scrollTop = 0;
+    updateGutter();
+  }
+
+  let tabLeaves = false;
+  editor.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      start("run");
+      return;
+    }
+    if (event.key === "Escape") {
+      tabLeaves = true;
+      return;
+    }
+    if (event.key === "Tab" && !tabLeaves && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      event.preventDefault();
+      editor.setRangeText("    ", editor.selectionStart, editor.selectionEnd, "end");
+      editor.dispatchEvent(new Event("input"));
+    }
+    tabLeaves = false;
+  });
+  editor.addEventListener("input", () => {
+    updateGutter();
+    picker.value = "";
+  });
+  editor.addEventListener("scroll", () => {
+    gutter.scrollTop = editor.scrollTop;
+  });
+
+  // ---------------------------------------------------------------- examples and links
+  function encodeProgram(text) {
+    let binary = "";
+    for (const byte of new TextEncoder().encode(text)) binary += String.fromCharCode(byte);
+    return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+  }
+
+  function decodeProgram(text) {
+    const binary = atob(text.replaceAll("-", "+").replaceAll("_", "/"));
+    return new TextDecoder().decode(Uint8Array.from(binary, (letter) => letter.charCodeAt(0)));
+  }
+
+  function programInLink() {
+    const found = location.hash.match(/^#code=([A-Za-z0-9_-]+)$/);
+    if (!found) return null;
+    try {
+      return decodeProgram(found[1]);
+    } catch {
+      return null;
+    }
+  }
+
+  function linkToProgram() {
+    const link = new URL(location.href);
+    link.hash = "code=" + encodeProgram(editor.value);
+    return link.href;
+  }
+
+  picker.add(new Option("Your own program", ""));
+  for (const example of examples) picker.add(new Option(example.title, example.name));
+  picker.addEventListener("change", () => {
+    const example = examples.find((entry) => entry.name === picker.value);
+    if (!example) return;
+    setProgram(example.source);
+    history.replaceState(null, "", location.pathname + location.search);
+    start("run");
+  });
+
+  shareButton.addEventListener("click", async () => {
+    const link = linkToProgram();
+    history.replaceState(null, "", link);
+    try {
+      await navigator.clipboard.writeText(link);
+      statusLine.textContent = "Link copied. It holds the whole program.";
+    } catch {
+      statusLine.textContent = "The link is in the address bar. It holds the whole program.";
+    }
+  });
+
+  // ---------------------------------------------------------------- theme
+  function showTheme() {
+    themeButton.textContent = root.dataset.theme === "dark" ? "Light theme" : "Dark theme";
+  }
+
+  themeButton.addEventListener("click", () => {
+    root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+    try {
+      localStorage.setItem("kilat-theme", root.dataset.theme);
+    } catch {}
+    showTheme();
+  });
+  showTheme();
+
+  // ---------------------------------------------------------------- running
+  function setBusy(busy) {
+    root.dataset.state = busy ? "running" : "idle";
+    runButton.disabled = busy;
+    checkButton.disabled = busy;
+    stopButton.disabled = !busy;
+  }
+
+  function appendOutput(text) {
+    output.append(text);
+    resultBox.scrollTop = resultBox.scrollHeight;
+  }
+
+  // The only thing a program may ask of this page is a line of text.
+  function answerHost(name, payload) {
+    if (name === "input") return prompt(payload || "Input") ?? "";
+    return null;
+  }
+
+  function seconds(milliseconds) {
+    return milliseconds < 1000 ? `${Math.max(1, Math.round(milliseconds))} ms` : `${(milliseconds / 1000).toFixed(2)} s`;
+  }
+
+  async function start(mode) {
+    if (!kilat || controller) return;
+    controller = new AbortController();
+    setBusy(true);
+    output.replaceChildren();
+    errorBox.hidden = true;
+    errorBox.textContent = "";
+    statusLine.textContent = mode === "check" ? "Checking." : "Running.";
+    const source = editor.value;
+    const began = performance.now();
+    let result;
+    try {
+      if (mode === "check") {
+        result = await kilat.check(source);
+      } else {
+        result = await kilat.run(source, {
+          ...LIMITS,
+          signal: controller.signal,
+          host: answerHost,
+          onOutput: appendOutput,
+        });
+      }
+    } catch (problem) {
+      result = { ok: false, output: "", error: String(problem?.message ?? problem), kind: "crash", fuelUsed: 0 };
+    }
+    const took = seconds(performance.now() - began);
+    if (result.ok && mode === "check") {
+      statusLine.textContent = `No problems found in ${took}. Nothing was run.`;
+    } else if (result.ok) {
+      const work = Math.round(result.fuelUsed).toLocaleString("en-US");
+      statusLine.textContent = `Finished in ${took}. Loop turns and calls: ${work}.`;
+    } else {
+      errorBox.textContent = result.error;
+      errorBox.hidden = false;
+      statusLine.textContent = `${ENDINGS[result.kind] ?? "Stopped."} (${took})`;
+      resultBox.scrollTop = resultBox.scrollHeight;
+    }
+    root.dataset.kind = result.ok ? "ok" : result.kind;
+    controller = null;
+    setBusy(false);
+  }
+
+  runButton.addEventListener("click", () => start("run"));
+  checkButton.addEventListener("click", () => start("check"));
+  stopButton.addEventListener("click", () => controller?.abort());
+  document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && event.target !== editor) {
+      event.preventDefault();
+      start("run");
+    }
+  });
+
+  // ---------------------------------------------------------------- start-up
+  const shared = programInLink();
+  if (shared === null) {
+    picker.value = examples[0].name;
+    setProgram(examples[0].source);
+  } else {
+    picker.value = "";
+    setProgram(shared);
+  }
+
+  try {
+    kilat = await loadKilat();
+    setBusy(false);
+    statusLine.textContent = `Kilat ${kilat.version} is ready.`;
+    await start("run");
+  } catch (problem) {
+    root.dataset.state = "failed";
+    statusLine.textContent = `The interpreter could not be loaded: ${problem?.message ?? problem}`;
+  }
+</script>
+<script>
+  // A page opened straight from a folder cannot load its modules; say so instead of waiting.
+  setTimeout(function () {
+    if (!document.documentElement.dataset.state) {
+      document.getElementById("status").textContent =
+        "The interpreter did not load. Open this page from a web server (http or https), not as a file.";
+    }
+  }, 4000);
+</script>
+<script>
+  // On a narrow screen the result sits below the program, so bring it into view when a run ends.
+  (() => {
+    const root = document.documentElement;
+    const result = document.getElementById("result");
+    let before = root.dataset.state;
+    new MutationObserver(() => {
+      const now = root.dataset.state;
+      if (before === "running" && now !== "running" && result) {
+        const box = result.getBoundingClientRect();
+        if (box.bottom > window.innerHeight || box.top < 0) {
+          result.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+      before = now;
+    }).observe(root, { attributes: true, attributeFilter: ["data-state"] });
+  })();
+</script>
+</body>
+</html>

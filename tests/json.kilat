@@ -1,0 +1,15 @@
+
+let text = "{{\"name\": \"bracket\", \"mass_kg\": 0.25, \"holes\": [6, 6, 8], \"ok\": true, \"note\": null, \"nested\": {{\"deep\": [1, [2, 3]]}}}}"
+let doc = json_parse(text).unwrap()
+print(doc.get("name").as_str() ?? "?", doc.get("mass_kg").as_num() ?? 0.0, doc.get("ok").as_bool())
+let holes = doc.get("holes").as_list() ?? []
+print(holes.map(|h| h.as_int() ?? 0).sum(), doc.get("nested").get("deep").at(1).at(0).as_int())
+print(json_pretty(doc))
+print(json_parse("[1, 2,"))
+print(json_parse("{{\"a\": tru}}"))
+let built = JObj(["id": JNum(7.0), "tags": JList([JStr("a\"b"), JNull, JBool(false)]), "x": JNum(1.5e300)])
+print(json_str(built))
+print(json_str(json_parse(json_str(built)).unwrap()) == json_str(built))
+print(1.0, 0.1 + 0.2, 1e21, 1.5e-7, 123456789012345.0, 1e16, 100.0 / 3.0, -0.0, 2.5e-5, 1e15)
+print("{0.1 + 0.2:.2}", "{2.0 / 3.0:.5}", "{1234.5:>10.1}|", "{7:>4}|{7:<4}|", "{-1.005:.2}", "{1.005:.2}", "{0.5:.0}", "{1.5:.0}", "{2.5:.0}")
+print(round_to(2.675, 2), round_to(1.005, 2), round_to(-2.675, 2), round_to(1234.5678, -2), round_to(0.1 + 0.2, 10))

@@ -1,0 +1,20 @@
+total mass = 2.392 kg
+heaviest = plate
+3.14159265359 6.0 0.0
+Ok(1.5) Err("division by zero")
+-1.0
+torque = 6.00 N*m
+speed = 25.0 m/s, in mph 55.9234073014
+298.15 K 25.0
+3 9 brown,dog,end,fox,jumps,lazy,over,quick,the
+{"a":[1,2.5,"x",null,true],"b":{"c":7}}
+Some(7) Some(2.5) None
+1 a
+2 b
+3 c
+[(0, "x"), (1, "y")] [0, 1, 2, 3, 4] [2, 5, 8]
+3 -4 2 3.5 1024 1.41421356237
+3.1416     1234567.89| 42    |    ab|
+[1: [1, 4], 2: [2, 5], 0: [3, 6]]
+10 true false
+ABC 5 a;b x bc 233

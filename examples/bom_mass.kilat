@@ -1,0 +1,29 @@
+// Bill of materials: mass and cost per line, totals, the heaviest line and a JSON export.
+unit USD
+
+struct Line { part: Str, qty: Int, mass: kg, price: USD }
+
+let bom = [
+    Line(part: "base plate", qty: 1, mass: 1.85 kg, price: 14.50 USD),
+    Line(part: "bracket", qty: 4, mass: 240 g, price: 3.20 USD),
+    Line(part: "bolt M6x20", qty: 16, mass: 6.5 g, price: 0.08 USD),
+    Line(part: "cover", qty: 1, mass: 410 g, price: 6.75 USD),
+]
+
+var total_mass = 0 kg
+var total_cost = 0 USD
+for line in bom {
+    let mass = line.mass * line.qty
+    let cost = line.price * line.qty
+    total_mass += mass
+    total_cost += cost
+    print("{line.part:<12} x{line.qty:<3} {mass:kg.3}  {cost:USD.2}")
+}
+print("total mass = {total_mass:kg.3}")
+print("total cost = {total_cost:USD.2}")
+
+let heaviest = bom.sort_by(|l| l.mass * l.qty).last().unwrap()
+print("heaviest line = {heaviest.part}")
+
+let rows = bom.map(|l| JObj(["part": JStr(l.part), "qty": JNum(float(l.qty)), "mass_kg": JNum(l.mass in kg)]))
+print(json_str(JList(rows)))

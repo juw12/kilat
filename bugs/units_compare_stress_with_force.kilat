@@ -1,0 +1,8 @@
+// BUG (units): compares a load (force) with a yield strength (pressure)
+let yield_strength = 250 MPa
+let load = 12 kN
+if load < yield_strength {
+    print("safe")
+} else {
+    print("overloaded")
+}

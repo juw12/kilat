@@ -1,0 +1,8 @@
+// FIXED (safety): no value is returned when the load is small
+fn grade(load: N) -> Str {
+    if load > 10 kN {
+        return "heavy"
+    }
+    "light"
+}
+print(grade(2 kN))

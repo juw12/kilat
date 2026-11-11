@@ -1,0 +1,3 @@
+// FIXED (types): asks for the length of a number
+let quantity = [5]
+print(len(quantity))

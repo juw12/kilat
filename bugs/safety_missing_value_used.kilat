@@ -1,0 +1,4 @@
+// BUG (safety): find() may find nothing, the result is used as if it were always a number
+let sizes = [6, 8, 10, 12]
+let hit = find(sizes, |s| s > 20)
+print(hit + 1)

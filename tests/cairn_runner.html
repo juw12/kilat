@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kilat Cairn plugin checks</title>
+<!-- No favicon request, so that every request the page makes is one the checks know about. -->
+<link rel="icon" href="data:,">
+</head>
+<body>
+<script>
+  // Tells the test script when the module below cannot even start.
+  window.addEventListener("error", function (event) {
+    if (window.reported) return;
+    window.reported = true;
+    fetch("/report", { method: "POST", body: JSON.stringify({ fatal: String(event.message || event.error) }) });
+  });
+</script>
+<script type="module">
+  // Loads main.js under the rules of Cairn's plugin loader and draws code blocks with it.
+
+  const results = [];
+  const timings = {};
+  const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+  async function until(test, timeoutMs = 20000) {
+    const end = performance.now() + timeoutMs;
+    while (performance.now() < end) {
+      if (test()) return true;
+      await sleep(15);
+    }
+    return Boolean(test());
+  }
+
+  function short(value) {
+    const text = JSON.stringify(value) ?? String(value);
+    return text.length > 200 ? text.slice(0, 200) + "..." : text;
+  }
+
+  const same = (label, actual, expected) =>
+    actual === expected ? [] : [`${label} is ${short(actual)}, expected ${short(expected)}`];
+  const holds = (problem, condition) => (condition ? [] : [problem]);
+
+  // A check passes when its body returns no problems.
+  async function check(name, body) {
+    let problems;
+    try {
+      problems = (await body()) ?? [];
+    } catch (problem) {
+      problems = [`threw: ${problem?.stack ?? problem}`];
+    }
+    results.push({ name, problems });
+    fetch("/progress", { method: "POST", body: name }).catch(() => {});
+  }
+
+  async function send(report) {
+    window.reported = true;
+    await fetch("/report", { method: "POST", body: JSON.stringify(report) });
+  }
+
+  // The rules below are copied from Cairn's plugin loader (docs/plugins.js in the Cairn app).
+  const CAIRN_SIZE_LIMIT = 400000;
+  const CAIRN_API_VERSION = 1;
+  const BUILT_IN_BLOCKS = new Set(["mermaid", "math"]);
+
+  function manifestProblem(manifest) {
+    if (!manifest || typeof manifest !== "object") return "The plugin has no manifest.";
+    if (typeof manifest.id !== "string" || !/^[a-z0-9][a-z0-9-]{1,48}$/.test(manifest.id)) return "The manifest needs a short id.";
+    if (typeof manifest.name !== "string" || !manifest.name.trim()) return "The manifest needs a name.";
+    if (typeof manifest.version !== "string" || !manifest.version.trim()) return "The manifest needs a version.";
+    if (manifest.minApi && Number(manifest.minApi) > CAIRN_API_VERSION) return "This plugin needs a newer Cairn.";
+    return "";
+  }
+
+  async function importCode(code) {
+    const address = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
+    try {
+      return await import(address);
+    } finally {
+      URL.revokeObjectURL(address);
+    }
+  }
+
+  // The part of Cairn's plugin API that a code-block plugin can use.
+  function fakeCairn(id) {
+    const seen = { blocks: new Map(), commands: new Map(), styles: [], inserted: [], toasts: [], rerenders: 0 };
+    const cairn = {
+      registerCodeBlock(language, draw) {
+        const lang = String(language || "").toLowerCase();
+        if (!/^[a-z0-9][a-z0-9_-]*$/.test(lang) || BUILT_IN_BLOCKS.has(lang)) throw new Error(`Can't take over ${lang} blocks.`);
+        if (typeof draw !== "function") throw new Error("registerCodeBlock needs a render function.");
+        seen.blocks.set(lang, { plugin: id, render: draw });
+      },
+      addCommand({ id: commandId, name, run }) {
+        if (!commandId || !name || typeof run !== "function") throw new Error("addCommand needs id, name and run.");
+        seen.commands.set(`${id}:${commandId}`, { name: String(name), run });
+      },
+      addStyle(css) {
+        const style = document.createElement("style");
+        style.dataset.plugin = id;
+        style.textContent = String(css);
+        document.head.append(style);
+        seen.styles.push(style);
+      },
+      insertIntoActiveNote: (text) => seen.inserted.push(String(text)),
+      rerender: () => {
+        seen.rerenders += 1;
+      },
+      toast: (message) => seen.toasts.push(String(message)),
+      escape: (value) => String(value).replace(/[&<>"']/g, (letter) => `&#${letter.charCodeAt(0)};`),
+    };
+    return { cairn, seen };
+  }
+
+  const note = document.createElement("article");
+  document.body.append(note);
+
+  // Draws one code block the way Cairn does: the <pre> is swapped for a plugin block.
+  function drawBlock(block, source) {
+    const pre = document.createElement("pre");
+    const code = document.createElement("code");
+    code.className = "language-kilat";
+    code.textContent = source;
+    pre.append(code);
+    note.append(pre);
+    const out = document.createElement("div");
+    out.className = "plugin-block";
+    out.dataset.pluginBlock = "kilat";
+    pre.replaceWith(out);
+    block.render(code.textContent, out, { notePath: "Checks.md", language: "kilat" });
+    return out;
+  }
+
+  const resultOf = (out) => out.querySelector(".kilat-result");
+  const textOf = (out, selector) => out.querySelector(selector)?.textContent ?? "";
+
+  // Once a block has failed to show a result, later blocks get less time, so that the
+  // report still arrives.
+  let patienceMs = 30000;
+
+  async function drawn(block, source, timeoutMs = patienceMs) {
+    const began = performance.now();
+    const out = drawBlock(block, source);
+    const done = await until(() => resultOf(out)?.dataset.kilat !== "running", timeoutMs);
+    if (!done) patienceMs = 3000;
+    return {
+      out,
+      done,
+      milliseconds: performance.now() - began,
+      state: resultOf(out)?.dataset.kilat,
+      output: textOf(out, ".kilat-output"),
+      error: textOf(out, ".kilat-error"),
+    };
+  }
+
+  async function runAll(cases) {
+    let code = "";
+    let plugin = null;
+    let block = null;
+    let cleanUp = null;
+    const { cairn, seen } = fakeCairn("kilat");
+
+    await check("main.js is within Cairn's size limit", async () => {
+      code = await (await fetch("/main.js")).text();
+      timings.pluginCharacters = code.length;
+      return holds(`main.js is ${code.length} characters; the limit is ${CAIRN_SIZE_LIMIT}`, code.length <= CAIRN_SIZE_LIMIT);
+    });
+
+    await check("main.js loads the way Cairn loads a plugin", async () => {
+      plugin = await importCode(code);
+      return [
+        ...same("manifest problem", manifestProblem(plugin.manifest), ""),
+        ...same("manifest id", plugin.manifest?.id, "kilat"),
+        ...holds("the default export is not a function", typeof plugin.default === "function"),
+      ];
+    });
+
+    await check("the plugin starts and registers its block, commands and style", async () => {
+      cleanUp = plugin.default(cairn);
+      block = seen.blocks.get("kilat");
+      return [
+        ...holds("no kilat block was registered", Boolean(block)),
+        ...same("commands", [...seen.commands.keys()].join(" "), "kilat:insert-example kilat:run-again"),
+        ...same("styles added", seen.styles.length, 1),
+      ];
+    });
+
+    await check("a block shows its program at once, then the result", async () => {
+      const source = 'print("ready")\n';
+      const began = performance.now();
+      const out = drawBlock(block, source);
+      const problems = [
+        ...same("program shown", textOf(out, ".kilat-source"), 'print("ready")'),
+        ...same("state right after drawing", resultOf(out)?.dataset.kilat, "running"),
+      ];
+      const done = await until(() => resultOf(out)?.dataset.kilat !== "running", 40000);
+      timings.pluginFirstResultMs = Math.round(performance.now() - began);
+      timings.pluginReadyMs = Math.round(began);
+      if (!done) patienceMs = 3000;
+      problems.push(...holds("no result arrived", done));
+      problems.push(...same("output", textOf(out, ".kilat-output"), "ready\n"));
+      return problems;
+    });
+
+    for (const example of cases.examples) {
+      await check(`block: ${example.title}`, async () => {
+        const seenBlock = await drawn(block, example.source);
+        const problems = holds("no result arrived", seenBlock.done);
+        if (example.expected) {
+          problems.push(...same("output", seenBlock.output, example.expected.output));
+          problems.push(...same("error", seenBlock.error.trimEnd(), example.expected.error.trimEnd()));
+        }
+        return problems;
+      });
+    }
+
+    await check("a bare expression shows its value", async () => {
+      const seenBlock = await drawn(block, "1 + 2");
+      return [...same("output", seenBlock.output, "3\n"), ...same("state", seenBlock.state, "ok")];
+    });
+
+    await check("text printed by a program is never treated as HTML", async () => {
+      const source = 'print(\'<img src="x" onerror="window.kilatWasFooled = true"><b>bold</b>\')';
+      const seenBlock = await drawn(block, source);
+      await sleep(100);
+      return [
+        ...same("output", seenBlock.output, '<img src="x" onerror="window.kilatWasFooled = true"><b>bold</b>\n'),
+        ...holds("the output became page elements", seenBlock.out.querySelector("img, b") === null),
+        ...holds("script from the output ran", window.kilatWasFooled === undefined),
+      ];
+    });
+
+    await check("an endless loop in a note is stopped", async () => {
+      const seenBlock = await drawn(block, "while true { }", patienceMs * 3);
+      timings.pluginLimitMs = Math.round(seenBlock.milliseconds);
+      return [...holds("the loop was not stopped within 90 s", seenBlock.done), ...same("state", seenBlock.state, "fuel")];
+    });
+
+    await check("drawing the same block again reuses the result", async () => {
+      const seenBlock = await drawn(block, "while true { }", 5000);
+      timings.pluginRedrawMs = Math.round(seenBlock.milliseconds);
+      return [
+        ...same("state", seenBlock.state, "fuel"),
+        ...holds(`the second drawing took ${Math.round(seenBlock.milliseconds)} ms`, seenBlock.milliseconds < 200),
+      ];
+    });
+
+    // Draws a block while a timer watches for the page freezing.
+    async function watched(source) {
+      let longestGap = 0;
+      let last = performance.now();
+      const ticker = setInterval(() => {
+        const now = performance.now();
+        longestGap = Math.max(longestGap, now - last);
+        last = now;
+      }, 10);
+      const seenBlock = await drawn(block, source, Math.min(25000, patienceMs));
+      clearInterval(ticker);
+      timings.pluginLongestFreezeMs = Math.max(timings.pluginLongestFreezeMs ?? 0, Math.round(longestGap));
+      return { seenBlock, longestGap };
+    }
+
+    await check("a program that keeps copying a long text is stopped, and the page stays usable", async () => {
+      const slow = 'let text = repeat("ab", 100000)\nvar total = 0\nwhile true {\n    total += len(replace(text, "a", "c"))\n}\n';
+      const { seenBlock, longestGap } = await watched(slow);
+      timings.pluginLongTextLimitMs = Math.round(seenBlock.milliseconds);
+      return [
+        // Long operations cost fuel by their size, so the fuel limit usually comes before the clock.
+        ...holds(`state is ${short(seenBlock.state)}`, ["fuel", "stopped"].includes(seenBlock.state)),
+        ...holds(`it was stopped after ${Math.round(seenBlock.milliseconds)} ms`, seenBlock.milliseconds < 14000),
+        ...holds(`the page froze for ${Math.round(longestGap)} ms`, longestGap < 500),
+      ];
+    });
+
+    await check("a program that keeps asking for the time is stopped by the clock, and the page stays usable", async () => {
+      // A turn that asks the host costs two units of fuel, so on this program the clock comes first.
+      const asking = "var total = 0.0\nwhile true {\n    total += clock()\n}\n";
+      const { seenBlock, longestGap } = await watched(asking);
+      timings.pluginTimeLimitMs = Math.round(seenBlock.milliseconds);
+      return [
+        ...same("state", seenBlock.state, "stopped"),
+        ...holds(`it was stopped after ${Math.round(seenBlock.milliseconds)} ms`, seenBlock.milliseconds > 9000 && seenBlock.milliseconds < 14000),
+        ...holds(`the note says ${short(seenBlock.error)}`, seenBlock.error.includes("10 seconds")),
+        ...holds(`the page froze for ${Math.round(longestGap)} ms`, longestGap < 500),
+      ];
+    });
+
+    await check("the insert command gives a block that works", async () => {
+      seen.commands.get("kilat:insert-example").run();
+      const inserted = seen.inserted[0] ?? "";
+      const found = inserted.match(/^```kilat\n([\s\S]*?)\n```\n$/);
+      if (!found) return [`the command inserted ${short(inserted)}`];
+      const seenBlock = await drawn(block, found[1]);
+      return [...same("output", seenBlock.output, "stress = 20.8 MPa\n"), ...same("error", seenBlock.error, "")];
+    });
+
+    await check("the run-again command asks Cairn to draw the note again", async () => {
+      seen.commands.get("kilat:run-again").run();
+      return same("times Cairn was asked to draw", seen.rerenders, 1);
+    });
+
+    await check("the plugin fetches nothing while it works", async () => {
+      const loaded = performance.getEntriesByType("resource").map((entry) => entry.name);
+      const own = ["/cases.json", "/main.js", "/progress"].map((path) => location.origin + path);
+      const others = loaded.filter((name) => !own.includes(name) && !name.startsWith("blob:"));
+      return holds(`it loaded ${short(others)}`, others.length === 0);
+    });
+
+    await check("turning the plugin off does not fail", async () => {
+      const problems = holds("activate did not return a clean-up function", typeof cleanUp === "function");
+      if (typeof cleanUp === "function") cleanUp();
+      return problems;
+    });
+  }
+
+  try {
+    const cases = await (await fetch("/cases.json")).json();
+    await runAll(cases);
+    await send({ userAgent: navigator.userAgent, results, timings });
+  } catch (problem) {
+    await send({ fatal: String(problem?.stack ?? problem) });
+  }
+</script>
+</body>
+</html>

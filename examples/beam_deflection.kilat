@@ -1,0 +1,24 @@
+// Cantilever with a load at the free end: deflection and bending stress for several lengths.
+let load = 500 N
+let modulus = 200 GPa              // steel
+let width = 40 mm
+let depth = 8 mm
+let inertia = width * depth ^ 3 / 12
+let yield_strength = 250 MPa
+
+fn deflection(force: N, length: m, e: Pa, i: m^4) -> m {
+    force * length ^ 3 / (3 * e * i)
+}
+
+fn bending_stress(force: N, length: m, i: m^4, height: m) -> Pa {
+    force * length * (height / 2) / i
+}
+
+print("second moment of area = {inertia:mm^4.1}")
+for length_mm in [100, 200, 300, 400] {
+    let length = length_mm * 1 mm
+    let sag = deflection(load, length, modulus, inertia)
+    let stress = bending_stress(load, length, inertia, depth)
+    let verdict = if stress < yield_strength { "ok" } else { "YIELDS" }
+    print("{length_mm:>4} mm  sag {sag:mm.2}  stress {stress:MPa.1}  {verdict}")
+}

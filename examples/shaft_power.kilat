@@ -1,0 +1,16 @@
+// Motor shaft: power from torque and speed, then the shear stress in a solid shaft.
+let torque = 48 N * 1 m
+let speed = 1450 rpm               // rpm is an angular speed, so torque * speed is a power
+let power = torque * speed
+print("power            = {power:kW.2}")
+
+// Shear stress at the surface of a solid round shaft: 16 T / (pi d^3)
+let diameter = 25 mm
+let shear = 16 * torque / (pi * diameter ^ 3)
+print("shear stress     = {shear:MPa.2}")
+
+// Smallest diameter that keeps the shear stress under the allowable value.
+let allowable = 40 MPa
+let cube = 16 * torque / (pi * allowable)
+let smallest = ((cube in m^3) ^ (1.0 / 3.0)) * 1 m
+print("minimum diameter = {smallest:mm.1}")

@@ -1,0 +1,5 @@
+// BUG (units): adds a mass to a length
+let length = 120 mm
+let mass = 0.4 kg
+let total = length + mass
+print(total)

@@ -1,0 +1,8 @@
+// FIXED (types): the function promises a number but returns text on one path
+fn safety_factor(strength: Pa, stress: Pa) -> Float? {
+    if stress <= 0 Pa {
+        return None
+    }
+    Some(strength / stress)
+}
+print(safety_factor(250 MPa, 0 Pa))

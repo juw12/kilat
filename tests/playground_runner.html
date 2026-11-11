@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kilat playground checks</title>
+</head>
+<body>
+<script>
+  // Tells the test script when the module below cannot even start.
+  window.addEventListener("error", function (event) {
+    if (window.reported) return;
+    window.reported = true;
+    fetch("/report", { method: "POST", body: JSON.stringify({ fatal: String(event.message || event.error) }) });
+  });
+</script>
+<script type="module">
+  // Drives docs/index.html in a frame, the way a visitor would, and reports what it saw.
+
+  const results = [];
+  const timings = {};
+  const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+  async function until(test, timeoutMs = 20000) {
+    const end = performance.now() + timeoutMs;
+    while (performance.now() < end) {
+      if (test()) return true;
+      await sleep(15);
+    }
+    return Boolean(test());
+  }
+
+  function short(value) {
+    const text = JSON.stringify(value) ?? String(value);
+    return text.length > 200 ? text.slice(0, 200) + "..." : text;
+  }
+
+  const same = (label, actual, expected) =>
+    actual === expected ? [] : [`${label} is ${short(actual)}, expected ${short(expected)}`];
+  const holds = (problem, condition) => (condition ? [] : [problem]);
+
+  // Each turn of this loop takes milliseconds, so it never reaches the fuel limit on its own.
+  const slowTurns = [
+    'let text = repeat("ab", 100000)',
+    "var total = 0",
+    "while true {",
+    '    total += len(replace(text, "a", "c"))',
+    "}",
+  ].join("\n");
+
+  // Each turn of this loop asks the page for the time, which costs almost no fuel.
+  const askingTurns = [
+    "var total = 0.0",
+    "while true {",
+    "    total += clock()",
+    "}",
+  ].join("\n");
+
+  // A check passes when its body returns no problems.
+  async function check(name, body) {
+    let problems;
+    try {
+      problems = (await body()) ?? [];
+    } catch (problem) {
+      problems = [`threw: ${problem?.stack ?? problem}`];
+    }
+    results.push({ name, problems });
+    fetch("/progress", { method: "POST", body: name }).catch(() => {});
+  }
+
+  async function send(report) {
+    window.reported = true;
+    await fetch("/report", { method: "POST", body: JSON.stringify(report) });
+  }
+
+  async function openPlayground(address, width, height) {
+    const frame = document.createElement("iframe");
+    frame.style.cssText = `width:${width}px;height:${height}px;border:0;display:block`;
+    frame.src = address;
+    const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+    document.body.append(frame);
+    await loaded;
+    const get = (id) => frame.contentDocument.getElementById(id);
+    const root = () => frame.contentDocument.documentElement;
+    const page = {
+      frame,
+      get,
+      window: frame.contentWindow,
+      document: frame.contentDocument,
+      state: () => root().dataset.state,
+      kind: () => root().dataset.kind,
+      status: () => get("status").textContent,
+      output: () => get("output").textContent,
+      error: () => (get("error").hidden ? "" : get("error").textContent),
+      finished: (timeoutMs = 20000) => until(() => root().dataset.state === "idle", timeoutMs),
+      setProgram(source) {
+        get("editor").value = source;
+        get("editor").dispatchEvent(new Event("input"));
+      },
+      async run(source, button = "run", timeoutMs = 20000) {
+        page.setProgram(source);
+        get(button).click();
+        const done = await page.finished(timeoutMs);
+        return { done, output: page.output(), error: page.error(), status: page.status(), kind: page.kind() };
+      },
+    };
+    return page;
+  }
+
+  async function runAll(cases) {
+    const examples = cases.examples;
+    const page = await openPlayground("/docs/index.html", 1200, 800);
+
+    await check("the page loads and runs the first example", async () => {
+      const done = await page.finished(40000);
+      const problems = holds(`the first run did not finish; status is ${short(page.status())}`, done);
+      problems.push(...holds(`status is ${short(page.status())}`, page.status().startsWith("Finished")));
+      problems.push(...same("error", page.error(), ""));
+      if (examples[0].expected) problems.push(...same("output", page.output(), examples[0].expected.output));
+      return problems;
+    });
+
+    await check("the picker offers every example", async () => {
+      const offered = [...page.get("examples").options].map((option) => option.text);
+      const wanted = ["Your own program", ...examples.map((example) => example.title)];
+      return same("picker", offered.join(" | "), wanted.join(" | "));
+    });
+
+    for (const example of examples) {
+      await check(`example: ${example.title}`, async () => {
+        const picker = page.get("examples");
+        picker.value = example.name;
+        picker.dispatchEvent(new Event("change"));
+        const problems = holds("the run did not finish", await page.finished());
+        problems.push(...same("program", page.get("editor").value, example.source));
+        if (example.expected) {
+          problems.push(...same("output", page.output(), example.expected.output));
+          problems.push(...same("error", page.error().trimEnd(), example.expected.error.trimEnd()));
+        }
+        return problems;
+      });
+    }
+
+    await check("Check finds nothing wrong and runs nothing", async () => {
+      const seen = await page.run('print("ran")', "check");
+      return [
+        ...same("output", seen.output, ""),
+        ...same("error", seen.error, ""),
+        ...holds(`status is ${short(seen.status)}`, seen.status.startsWith("No problems found")),
+      ];
+    });
+
+    await check("Check reports a unit mistake", async () => {
+      const seen = await page.run("let width = 3 m\nprint(width + 2 kg)", "check");
+      return [
+        ...holds(`error is ${short(seen.error)}`, seen.error.includes("unit mismatch: cannot add m and kg")),
+        ...same("kind", seen.kind, "compile"),
+        ...holds(`status is ${short(seen.status)}`, seen.status.startsWith("Not run")),
+      ];
+    });
+
+    await check("a runtime error keeps the output before it", async () => {
+      const seen = await page.run('print("before")\nlet values = [1, 2, 3]\nprint(values[10])');
+      return [
+        ...same("output", seen.output, "before\n"),
+        ...holds(`error is ${short(seen.error)}`, seen.error.includes("index 10 is out of range")),
+        ...same("kind", seen.kind, "runtime"),
+      ];
+    });
+
+    const neverFinish = [
+      ["a program that is still working", slowTurns],
+      ["a program that keeps asking the page for the time", askingTurns],
+    ];
+    for (const [what, program] of neverFinish) {
+      await check(`Stop ends ${what}`, async () => {
+        page.setProgram(program);
+        let longestGap = 0;
+        let lastTick = performance.now();
+        const watch = setInterval(() => {
+          const now = performance.now();
+          longestGap = Math.max(longestGap, now - lastTick);
+          lastTick = now;
+        }, 20);
+        page.get("run").click();
+        await sleep(1500);
+        const problems = [
+          ...same("state while working", page.state(), "running"),
+          ...holds("Stop is disabled while the program runs", !page.get("stop").disabled),
+          ...holds("Run is enabled while the program runs", page.get("run").disabled),
+        ];
+        page.get("stop").click();
+        problems.push(...holds("the run did not stop within 5 s", await page.finished(5000)));
+        clearInterval(watch);
+        timings.playgroundLongestFreezeMs = Math.max(timings.playgroundLongestFreezeMs ?? 0, Math.round(longestGap));
+        problems.push(...same("kind", page.kind(), "stopped"));
+        problems.push(...holds(`the page froze for ${Math.round(longestGap)} ms`, longestGap < 500));
+        return problems;
+      });
+    }
+
+    await check("an endless loop is stopped at the limit", async () => {
+      const began = performance.now();
+      const seen = await page.run("while true { }", "run", 90000);
+      timings.playgroundLimitMs = Math.round(performance.now() - began);
+      return [...holds("the run did not end within 90 s", seen.done), ...same("kind", seen.kind, "fuel")];
+    });
+
+    await check("Ctrl+Enter runs the program", async () => {
+      page.setProgram("print(6 * 7)");
+      const key = new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true, cancelable: true });
+      page.get("editor").dispatchEvent(key);
+      await page.finished();
+      return same("output", page.output(), "42\n");
+    });
+
+    await check("Tab indents, and Esc then Tab leaves the editor", async () => {
+      const editor = page.get("editor");
+      const press = (key) => editor.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+      page.setProgram("");
+      const tabWasTaken = !press("Tab");
+      const afterTab = editor.value;
+      press("Escape");
+      const tabWasLeft = press("Tab");
+      return [
+        ...holds("Tab was not taken by the editor", tabWasTaken),
+        ...same("text after Tab", afterTab, "    "),
+        ...holds("Tab after Esc was still taken by the editor", tabWasLeft),
+        ...same("text after Esc and Tab", editor.value, "    "),
+      ];
+    });
+
+    await check("line numbers follow the program", async () => {
+      page.setProgram("let a = 1\nlet b = 2\nprint(a + b)");
+      return same("line numbers", page.get("gutter").textContent, "1\n2\n3");
+    });
+
+    await check("a copied link opens the same program", async () => {
+      const program = 'print("\u03c0 \u2248 3.14159, 5 \u00b5m, 20 \u00b0C")';
+      page.setProgram(program);
+      page.get("share").click();
+      const link = page.window.location.href;
+      const problems = holds(`the link is ${short(link)}`, link.includes("#code="));
+      const second = await openPlayground(link, 800, 600);
+      problems.push(...holds("the page opened from the link did not finish", await second.finished(40000)));
+      problems.push(...same("program", second.get("editor").value, program));
+      problems.push(...same("output", second.output(), "\u03c0 \u2248 3.14159, 5 \u00b5m, 20 \u00b0C\n"));
+      problems.push(...same("picker", second.get("examples").value, ""));
+      second.frame.remove();
+      return problems;
+    });
+
+    await check("the theme button switches and remembers the theme", async () => {
+      const root = page.document.documentElement;
+      const look = () => ({
+        theme: root.dataset.theme,
+        colour: page.window.getComputedStyle(root).backgroundColor,
+        label: page.get("theme").textContent,
+      });
+      const before = look();
+      page.get("theme").click();
+      const after = look();
+      const stored = page.window.localStorage.getItem("kilat-theme");
+      page.get("theme").click();
+      const restored = look();
+      page.window.localStorage.removeItem("kilat-theme");
+      return [
+        ...holds(`the theme stayed ${before.theme}`, before.theme !== after.theme),
+        ...holds(`the background stayed ${before.colour}`, before.colour !== after.colour),
+        ...holds(`the button still says ${before.label}`, before.label !== after.label),
+        ...same("remembered theme", stored, after.theme),
+        ...same("theme after a second click", restored.theme, before.theme),
+      ];
+    });
+
+    await check("input() asks the person at the page", async () => {
+      let asked = null;
+      page.window.prompt = (question) => {
+        asked = question;
+        return "Ada";
+      };
+      const seen = await page.run('let name = input("Your name? ")\nprint("Hello, {name}.")');
+      return [
+        ...same("question", asked, "Your name? "),
+        ...same("output", seen.output, "Hello, Ada.\n"),
+        ...same("error", seen.error, ""),
+      ];
+    });
+
+    await check("a program cannot reach files or the network", async () => {
+      const program = [
+        'match read_file("notes.txt") {',
+        '    Ok(text) => print("read a file"),',
+        "    Err(message) => print(message),",
+        "}",
+        'match http_get("https://example.com") {',
+        '    Ok(text) => print("fetched a page"),',
+        "    Err(message) => print(message),",
+        "}",
+      ].join("\n");
+      const seen = await page.run(program);
+      const wanted = "`read_file` is not allowed here\n`http_get` is not allowed here\n";
+      return [...same("output", seen.output, wanted), ...same("error", seen.error, "")];
+    });
+
+    await check("the page loads nothing from other servers", async () => {
+      const loaded = page.window.performance.getEntriesByType("resource").map((entry) => entry.name);
+      const outside = loaded.filter((name) => !name.startsWith(location.origin + "/"));
+      return [
+        ...holds(`it loaded ${short(outside)}`, outside.length === 0),
+        ...holds(`it loaded only ${short(loaded)}`, loaded.some((name) => name.endsWith("/kilat.wasm"))),
+      ];
+    });
+
+    await check("a wide screen puts the program beside the result", async () => {
+      const editorBox = page.document.querySelector(".editor").getBoundingClientRect();
+      const resultBox = page.get("result").getBoundingClientRect();
+      const width = page.document.documentElement.scrollWidth;
+      return [
+        ...holds(`the result starts at ${resultBox.left} px, the editor ends at ${editorBox.right} px`, resultBox.left >= editorBox.right),
+        ...holds(`the page is ${width} px wide in a 1200 px window`, width <= 1200),
+      ];
+    });
+
+    await check("a phone gets one column and no sideways scrolling", async () => {
+      const phone = await openPlayground("/docs/index.html", 390, 800);
+      const done = await phone.finished(40000);
+      const editorBox = phone.document.querySelector(".editor").getBoundingClientRect();
+      const resultBox = phone.get("result").getBoundingClientRect();
+      const width = phone.document.documentElement.scrollWidth;
+      const buttonHeight = phone.get("run").getBoundingClientRect().height;
+      phone.frame.remove();
+      return [
+        ...holds("the page did not finish its first run", done),
+        ...holds(`the result starts at ${resultBox.top} px, the editor ends at ${editorBox.bottom} px`, resultBox.top >= editorBox.bottom),
+        ...holds(`the page is ${width} px wide in a 390 px window`, width <= 390),
+        ...holds(`Run is ${buttonHeight} px high`, buttonHeight >= 44),
+      ];
+    });
+  }
+
+  try {
+    const cases = await (await fetch("/cases.json")).json();
+    await runAll(cases);
+    await send({ userAgent: navigator.userAgent, results, timings });
+  } catch (problem) {
+    await send({ fatal: String(problem?.stack ?? problem) });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+// Bolted joint: preload, bolt stress and safety factor for an M8 class 8.8 bolt.
+struct Bolt { name: Str, stress_area: mm^2, proof_strength: MPa }
+
+fn tensile_stress(load: N, bolt: Bolt) -> Pa {
+    load / bolt.stress_area
+}
+
+let m8 = Bolt(name: "M8 x 1.25, class 8.8", stress_area: 36.6 mm^2, proof_strength: 580 MPa)
+
+// Tighten to 75 % of the proof load.
+let preload = 0.75 * m8.proof_strength * m8.stress_area
+
+// Only part of the external load reaches the bolt; the clamped parts take the rest.
+let external_load = 4.5 kN
+let bolt_share = 0.25
+let bolt_load = preload + bolt_share * external_load
+
+let stress = tensile_stress(bolt_load, m8)
+let safety_factor = m8.proof_strength / stress
+
+print(m8.name)
+print("preload       = {preload:kN.2}")
+print("bolt load     = {bolt_load:kN.2}")
+print("bolt stress   = {stress:MPa.1}")
+print("safety factor = {safety_factor:.2}")
+if safety_factor < 1.2 {
+    print("WARNING: the margin to the proof strength is below 1.2")
+}

@@ -1,0 +1,5 @@
+// FIXED (units): adds a mass to a length
+let length = 120 mm
+let extra = 0.4 m
+let total = length + extra
+print(total)

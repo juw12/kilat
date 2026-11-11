@@ -1,0 +1,25 @@
+
+let force = 1.2 kN
+let area = 20 mm * 5 mm
+let stress = force / area
+assert(approx(stress in MPa, 12.0, 1e-9))
+let s2: Pa = stress
+print("{stress:MPa.2}", stress, s2 == stress)
+let e = 0.5 * 1200 kg * (25 m/s) ^ 2
+print("{e:kJ.1}", e)
+unit USD
+unit EUR = 1.1 USD
+let price = 20 EUR
+print(price in USD, price)
+let rate = 3 USD / 1 kg
+print(rate * 4 kg)
+assert_eq(sqrt(16 m^2), 4 m)
+assert_eq(100 cm == 1 m, true)
+assert(5 km > 3 mile)
+print(max(3 m, 200 cm), abs(-2 N), sum([1 kg, 500 g]))
+print(1 h in min, 1 kWh in MJ, 1 hp in W, 30 deg in rad, 60 rpm in Hz, 1 atm in psi)
+let thickness = 20 mm
+print("{thickness:mm}", "{thickness:inch.3}", thickness in um)
+fn hoop_stress(pressure: Pa, radius: m, wall: m) -> Pa { pressure * radius / wall }
+print("{hoop_stress(2 bar, 150 mm, 3 mm):MPa.1}")
+print(g0, 75 kg * g0, 1 N*m, 2 kg/m^3, 5 m/s^2, 3 W, 2 V, 1 ohm, 4 Hz)
