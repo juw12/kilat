@@ -1335,10 +1335,24 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
             if sep.is_empty() {
                 return err("split: the separator is empty (use chars to get single characters)");
             }
-            let n = s.matches(sep).count() + 1;
+            // A one-byte separator is always ASCII, and searching for a byte is much faster.
+            let byte = if sep.len() == 1 { Some(sep.as_bytes()[0]) } else { None };
+            let n = match byte {
+                Some(b) => s.as_bytes().iter().filter(|&&x| x == b).count() + 1,
+                None => s.matches(sep).count() + 1,
+            };
             heap.check(n.saturating_mul(40).saturating_add(s.len()).saturating_add(40))?;
-            let parts: Vec<String> = s.split(sep).map(str::to_string).collect();
-            strings(&mut core.heap, parts)
+            let mut parts: Vec<Box<str>> = Vec::with_capacity(n);
+            match byte {
+                Some(b) => parts.extend(s.split(b as char).map(|p| Box::<str>::from(p))),
+                None => parts.extend(s.split(sep).map(|p| Box::<str>::from(p))),
+            }
+            core.heap.reserve(parts.len() + 1);
+            let mut items = Vec::with_capacity(parts.len());
+            for p in parts {
+                items.push(core.heap.str(p)?);
+            }
+            core.heap.list(items)
         }
         B::Lines => {
             let heap = &core.heap;

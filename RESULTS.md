@@ -1,6 +1,6 @@
 # Measured results
 
-Written by `python judge.py` on 2026-11-11. Kilat kilat 0.1.0, CPython 3.13.2, Windows 10, Intel(R) Core(TM) Ultra 7 258V.
+Written by `python judge.py` on 2026-11-12. Kilat kilat 0.2.0, CPython 3.13.2, Windows 10, Intel(R) Core(TM) Ultra 7 258V.
 
 ## Speed against CPython
 
@@ -11,32 +11,32 @@ Wall-clock time on the development PC is dominated by how long a process takes t
 
 | Program | Kilat CPU s | CPython CPU s | Times faster | Net of start-up | Kilat wall s | CPython wall s |
 |---|---|---|---|---|---|---|
-| `collatz` | 0.345 | 0.775 | 2.25 | 2.09 | 0.735 | 1.572 |
-| `fib` | 0.087 | 0.307 | 3.53 | 2.98 | 0.220 | 0.442 |
-| `loop_sum` | 0.121 | 0.540 | 4.45 | 4.11 | 0.233 | 1.248 |
-| `mandelbrot` | 0.143 | 0.657 | 4.60 | 4.32 | 0.268 | 1.874 |
-| `map_count` | 0.278 | 0.284 | 1.02 | 0.80 | 0.678 | 0.680 |
-| `matmul` | 0.085 | 0.247 | 2.92 | 2.30 | 0.300 | 0.637 |
-| `nbody` | 0.145 | 0.593 | 4.10 | 3.80 | 0.539 | 1.913 |
-| `sieve` | 0.146 | 0.288 | 1.98 | 1.58 | 0.467 | 0.839 |
-| `sort` | 0.091 | 0.761 | 8.37 | 8.21 | 0.274 | 1.500 |
-| `strings` | 0.228 | 0.225 | 0.99 | 0.71 | 0.453 | 0.533 |
+| `collatz` | 0.290 | 0.940 | 3.24 | 3.05 | 0.333 | 1.174 |
+| `fib` | 0.108 | 0.356 | 3.30 | 2.78 | 0.118 | 0.384 |
+| `loop_sum` | 0.161 | 0.627 | 3.90 | 3.57 | 0.203 | 0.815 |
+| `mandelbrot` | 0.190 | 0.823 | 4.32 | 4.06 | 0.229 | 1.044 |
+| `map_count` | 0.246 | 0.324 | 1.32 | 1.06 | 0.289 | 0.365 |
+| `matmul` | 0.107 | 0.276 | 2.58 | 2.02 | 0.159 | 0.348 |
+| `nbody` | 0.190 | 0.719 | 3.78 | 3.51 | 0.235 | 0.882 |
+| `sieve` | 0.115 | 0.295 | 2.56 | 2.04 | 0.136 | 0.347 |
+| `sort` | 0.081 | 0.670 | 8.24 | 7.87 | 0.093 | 0.798 |
+| `strings` | 0.144 | 0.214 | 1.49 | 1.04 | 0.167 | 0.254 |
 
-- Geometric mean: 2.82 times faster for the whole process, 2.43 net of start-up.
-- Net of start-up Kilat is faster on 8 of 10 programs, slower on `map_count`, `strings`.
+- Geometric mean: 3.06 times faster for the whole process, 2.62 net of start-up.
+- Net of start-up Kilat is faster on 9 of 10 programs.
 - The target set before measuring was 5 times: not met.
 - The two languages print the same text on every program: yes.
-- Start-up: Kilat 7 ms of CPU (68 ms wall), CPython 68 ms (104 ms wall).
+- Start-up: Kilat 5 ms of CPU (8 ms wall), CPython 70 ms (82 ms wall).
 
 ## Sizes
 
 | File | Bytes |
 |---|---|
-| kilat program | 1,144,832 |
-| kilat library | 1,633,792 |
-| docs/kilat.wasm | 715,723 |
-| docs/kilat.js | 9,490 |
-| main.js (Cairn plugin) | 352,472 |
+| kilat program | 1,271,808 |
+| kilat library | 1,719,296 |
+| docs/kilat.wasm | 722,701 |
+| docs/kilat.js | 16,007 |
+| main.js (Cairn plugin) | 361,965 |
 
 The kilat program needs only these libraries: api-ms-win-core-synch-l1-2-0.dll, bcryptprimitives.dll, kernel32.dll, msvcrt.dll, ntdll.dll.
 
@@ -65,12 +65,12 @@ The corpus was written by the author of Kilat, so read it as a list of what Kila
 
 | Check | Passed |
 |---|---|
-| Conformance programs print their recorded output | 5 of 5 |
-| The library prints what the program prints | 10 of 10 |
+| Conformance programs print their recorded output | 6 of 6 |
+| The library prints what the program prints | 11 of 11 |
 | Limits and file access on the command line | 6 of 6 |
 | Behaviours quoted in the README | 6 of 6 |
-| WebAssembly build prints what the program prints | 10 of 10 |
-| Engine in a browser | 37 of 37 |
+| WebAssembly build prints what the program prints | 11 of 11 |
+| Engine in a browser | 79 of 79 |
 | Playground and Cairn plugin pages | 44 of 44 |
 
 | Behaviour | Kilat | Python |
@@ -86,13 +86,13 @@ The corpus was written by the author of Kilat, so read it as a list of what Kila
 
 Times seen in the browser checks, in milliseconds unless the name says otherwise:
 
-- `playgroundLimitMs`: 104
-- `playgroundLongestFreezeMs`: 154
-- `pluginCharacters`: 352472
-- `pluginFirstResultMs`: 165
-- `pluginLimitMs`: 42
-- `pluginLongTextLimitMs`: 2933
-- `pluginLongestFreezeMs`: 233
-- `pluginReadyMs`: 2124
-- `pluginRedrawMs`: 17
+- `playgroundLimitMs`: 114
+- `playgroundLongestFreezeMs`: 119
+- `pluginCharacters`: 361965
+- `pluginFirstResultMs`: 71
+- `pluginLimitMs`: 49
+- `pluginLongTextLimitMs`: 3185
+- `pluginLongestFreezeMs`: 132
+- `pluginReadyMs`: 494
+- `pluginRedrawMs`: 15
 - `pluginTimeLimitMs`: 10071

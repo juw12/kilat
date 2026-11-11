@@ -178,3 +178,13 @@ let before_stats = [3, 1, 2]
 assert_eq(median(before_stats), 2.0)
 assert_eq(before_stats, [3, 1, 2])
 print("statistics ok")
+
+// split: the one-byte fast path and the general path give the same parts
+assert_eq(split("", ","), [""])
+assert_eq(split(",", ","), ["", ""])
+assert_eq(split(",a,", ","), ["", "a", ""])
+assert_eq(split("a,b,,c", ","), ["a", "b", "", "c"])
+assert_eq(split("a--b--c", "--"), ["a", "b", "c"])
+assert_eq(split("naïve,café,日本", ","), ["naïve", "café", "日本"])
+assert_eq(split("日本、東京、大阪", "、"), ["日本", "東京", "大阪"])
+assert_eq(split("aéb", "é"), ["a", "b"])

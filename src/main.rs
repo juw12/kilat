@@ -145,12 +145,16 @@ fn compile(name: &str, source: &str, print_last: bool) -> Result<Program, String
 
 fn run_program(program: Program, options: &Options) -> i32 {
     let mut vm = Vm::new(Rc::new(program), seed(), options.memory, options.fuel);
-    if drive(&mut vm, options, Sink::Stdout) {
+    let code = if drive(&mut vm, options, Sink::Stdout) {
         0
     } else {
         eprintln!("{}", vm.error);
         1
-    }
+    };
+    // The process ends right after this, so leave the program's memory to the system
+    // instead of freeing every object one by one.
+    std::mem::forget(vm);
+    code
 }
 
 fn run_tests(path: &str, program: Program, options: &Options) -> i32 {

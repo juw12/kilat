@@ -1,6 +1,6 @@
 {
- "date": "2026-11-11",
- "kilat": "kilat 0.1.0",
+ "date": "2026-11-12",
+ "kilat": "kilat 0.2.0",
  "python": "CPython 3.13.2",
  "system": "Windows 10",
  "processor": "Intel(R) Core(TM) Ultra 7 258V",
@@ -9,158 +9,156 @@
   "pinned_to_fastest_cores": true,
   "cpu_time_from": "QueryProcessCycleTime",
   "startup": {
-   "kilat_cpu": 0.006526190187764991,
-   "python_cpu": 0.06771817080557238,
-   "kilat_wall": 0.06818429999839282,
-   "python_wall": 0.10424359999888111
+   "kilat_cpu": 0.005013652937613568,
+   "python_cpu": 0.0697684984857662,
+   "kilat_wall": 0.00831540000217501,
+   "python_wall": 0.08210470000267378
   },
   "benchmarks": [
    {
     "name": "collatz",
     "same_output": true,
-    "kilat_cpu": 0.3447114827377347,
-    "kilat_cpu_median": 0.34621533373712904,
-    "python_cpu": 0.7745960266505149,
-    "python_cpu_median": 0.7867806886735312,
-    "kilat_wall": 0.7349653999990551,
-    "python_wall": 1.5719546999971499,
-    "ratio": 2.2470850709659915,
-    "ratio_net": 2.090208744782996
+    "kilat_cpu": 0.2899702792247123,
+    "kilat_cpu_median": 0.29382539794064205,
+    "python_cpu": 0.9400105227135069,
+    "python_cpu_median": 0.9492417322834645,
+    "kilat_wall": 0.333076599999913,
+    "python_wall": 1.1737489000006462,
+    "ratio": 3.2417478274904385,
+    "ratio_net": 3.0539455620553175
    },
    {
     "name": "fib",
     "same_output": true,
-    "kilat_cpu": 0.08677287462144155,
-    "kilat_cpu_median": 0.0882088794669897,
-    "python_cpu": 0.30660154754694124,
-    "python_cpu_median": 0.3118722810417929,
-    "kilat_wall": 0.21966319999773987,
-    "python_wall": 0.4418403000017861,
-    "ratio": 3.533380090086126,
-    "ratio_net": 2.97686288757269
+    "kilat_cpu": 0.107769444579043,
+    "kilat_cpu_median": 0.10819728285887341,
+    "python_cpu": 0.35554310296789826,
+    "python_cpu_median": 0.3581809291338583,
+    "kilat_wall": 0.11836119999861694,
+    "python_wall": 0.3835096999973757,
+    "ratio": 3.299108614289339,
+    "ratio_net": 2.7811045968032078
    },
    {
     "name": "loop_sum",
     "same_output": true,
-    "kilat_cpu": 0.1214656795881284,
-    "kilat_cpu_median": 0.1252266123561478,
-    "python_cpu": 0.5401734930345246,
-    "python_cpu_median": 0.5493332652937614,
-    "kilat_wall": 0.23309410000001662,
-    "python_wall": 1.2482368999990285,
-    "ratio": 4.447128562291591,
-    "ratio_net": 4.110469993330755
+    "kilat_cpu": 0.1608685560266505,
+    "kilat_cpu_median": 0.16930082434887947,
+    "python_cpu": 0.626730333737129,
+    "python_cpu_median": 0.6530915596608117,
+    "kilat_wall": 0.20283850000123493,
+    "python_wall": 0.814768100000947,
+    "ratio": 3.8959157042057426,
+    "ratio_net": 3.5735920026409516
    },
    {
     "name": "mandelbrot",
     "same_output": true,
-    "kilat_cpu": 0.14298749061175045,
-    "kilat_cpu_median": 0.1433408473652332,
-    "python_cpu": 0.6570681102362205,
-    "python_cpu_median": 0.688808683827983,
-    "kilat_wall": 0.26848229999814066,
-    "python_wall": 1.8737777000023925,
-    "ratio": 4.595283877107385,
-    "ratio_net": 4.318806413243439
+    "kilat_cpu": 0.19040176075105997,
+    "kilat_cpu_median": 0.19111657056329498,
+    "python_cpu": 0.822706460932768,
+    "python_cpu_median": 0.8390315923682616,
+    "kilat_wall": 0.22899660000257427,
+    "python_wall": 1.0440333000005921,
+    "ratio": 4.3208973367027435,
+    "ratio_net": 4.061414571449607
    },
    {
     "name": "map_count",
     "same_output": true,
-    "kilat_cpu": 0.2784331714112659,
-    "kilat_cpu_median": 0.2842513628104179,
-    "python_cpu": 0.2840545112053301,
-    "python_cpu_median": 0.2895719200484555,
-    "kilat_wall": 0.6775908000017807,
-    "python_wall": 0.6798617999993439,
-    "ratio": 1.0201891885423418,
-    "ratio_net": 0.7956262815552152
+    "kilat_cpu": 0.24585565536038764,
+    "kilat_cpu_median": 0.24756570321017565,
+    "python_cpu": 0.3240739424591157,
+    "python_cpu_median": 0.3266876129618413,
+    "kilat_wall": 0.28851059999942663,
+    "python_wall": 0.3650121000027866,
+    "ratio": 1.3181471948817762,
+    "ratio_net": 1.0559015512873111
    },
    {
     "name": "matmul",
     "same_output": true,
-    "kilat_cpu": 0.08477943307086615,
-    "kilat_cpu_median": 0.08870243549364022,
-    "python_cpu": 0.24736867413688673,
-    "python_cpu_median": 0.27187894730466383,
-    "kilat_wall": 0.29978440000195405,
-    "python_wall": 0.6367145000003802,
-    "ratio": 2.9177910865494243,
-    "ratio_net": 2.295757935548892
+    "kilat_cpu": 0.10708245003028467,
+    "kilat_cpu_median": 0.10882674015748031,
+    "python_cpu": 0.27627259115687464,
+    "python_cpu_median": 0.2957038625075712,
+    "kilat_wall": 0.15860329999850364,
+    "python_wall": 0.3476940000000468,
+    "ratio": 2.5799987867175265,
+    "ratio_net": 2.023185327476894
    },
    {
     "name": "nbody",
     "same_output": true,
-    "kilat_cpu": 0.14458916050878257,
-    "kilat_cpu_median": 0.14618648637189582,
-    "python_cpu": 0.5926511096305269,
-    "python_cpu_median": 0.5970044524530588,
-    "kilat_wall": 0.5385513000001083,
-    "python_wall": 1.91258839999864,
-    "ratio": 4.0988626501813625,
-    "ratio_net": 3.8021269396450394
+    "kilat_cpu": 0.1900066953361599,
+    "kilat_cpu_median": 0.19427854149000606,
+    "python_cpu": 0.7190517032101756,
+    "python_cpu_median": 0.7387012271350697,
+    "kilat_wall": 0.23470999999699416,
+    "python_wall": 0.8817769000015687,
+    "ratio": 3.7843492932605827,
+    "ratio_net": 3.5097709422260497
    },
    {
     "name": "sieve",
     "same_output": true,
-    "kilat_cpu": 0.14573399697153241,
-    "kilat_cpu_median": 0.1472062628709873,
-    "python_cpu": 0.2881860539067232,
-    "python_cpu_median": 0.29815318291944276,
-    "kilat_wall": 0.4672866000000795,
-    "python_wall": 0.8391897000001336,
-    "ratio": 1.9774799284686968,
-    "ratio_net": 1.5837321784948835
+    "kilat_cpu": 0.11513512537855845,
+    "kilat_cpu_median": 0.11560414476075107,
+    "python_cpu": 0.2947111520290733,
+    "python_cpu_median": 0.2990608522107813,
+    "kilat_wall": 0.13616849999743863,
+    "python_wall": 0.3470581999972637,
+    "ratio": 2.5596980162229204,
+    "ratio_net": 2.0426774956531535
    },
    {
     "name": "sort",
     "same_output": true,
-    "kilat_cpu": 0.0909522350090854,
-    "kilat_cpu_median": 0.09280820290732889,
-    "python_cpu": 0.7611917625681405,
-    "python_cpu_median": 0.777517317383404,
-    "kilat_wall": 0.27376490000096965,
-    "python_wall": 1.5002370000001974,
-    "ratio": 8.369137520283074,
-    "ratio_net": 8.21397701657395
+    "kilat_cpu": 0.08128193458509994,
+    "kilat_cpu_median": 0.08290951362810418,
+    "python_cpu": 0.6699581889763779,
+    "python_cpu_median": 0.6755647498485766,
+    "kilat_wall": 0.0926380999990215,
+    "python_wall": 0.7982969000004232,
+    "ratio": 8.242399647549606,
+    "ratio_net": 7.869453428421284
    },
    {
     "name": "strings",
     "same_output": true,
-    "kilat_cpu": 0.22834808600847972,
-    "kilat_cpu_median": 0.2367896190187765,
-    "python_cpu": 0.2251958067837674,
-    "python_cpu_median": 0.22579960205935795,
-    "kilat_wall": 0.452702099999442,
-    "python_wall": 0.5331387000005634,
-    "ratio": 0.9861952894818866,
-    "ratio_net": 0.7099282755453262
+    "kilat_cpu": 0.14389671532404602,
+    "kilat_cpu_median": 0.14826907086614174,
+    "python_cpu": 0.21443402665051484,
+    "python_cpu_median": 0.21568268382798303,
+    "kilat_wall": 0.1673308999997971,
+    "python_wall": 0.2540922000007413,
+    "ratio": 1.4901940337388757,
+    "ratio_net": 1.041635500247157
    }
   ],
-  "geometric_mean": 2.8244610428035632,
-  "geometric_mean_net": 2.4267862394505055,
+  "geometric_mean": 3.063669540759831,
+  "geometric_mean_net": 2.624012454201758,
   "faster": [
    "collatz",
    "fib",
    "loop_sum",
    "mandelbrot",
+   "map_count",
    "matmul",
    "nbody",
    "sieve",
    "sort"
   ],
-  "slower": [
-   "map_count",
-   "strings"
-  ],
+  "slower": [],
   "outputs_match": true
  },
  "sizes": {
   "bytes": {
-   "kilat program": 1144832,
-   "kilat library": 1633792,
-   "docs/kilat.wasm": 715723,
-   "docs/kilat.js": 9490,
-   "main.js (Cairn plugin)": 352472
+   "kilat program": 1271808,
+   "kilat library": 1719296,
+   "docs/kilat.wasm": 722701,
+   "docs/kilat.js": 16007,
+   "main.js (Cairn plugin)": 361965
   },
   "needs": {
    "kilat program": [
@@ -415,6 +413,10 @@
    true
   ],
   [
+   "tests/maps.kilat",
+   true
+  ],
+  [
    "tests/tour.kilat",
    true
   ],
@@ -434,6 +436,10 @@
   ],
   [
    "tests/language.kilat",
+   true
+  ],
+  [
+   "tests/maps.kilat",
    true
   ],
   [
@@ -545,6 +551,10 @@
    ],
    [
     "tests/language.kilat",
+    true
+   ],
+   [
+    "tests/maps.kilat",
     true
    ],
    [
@@ -681,6 +691,170 @@
    ],
    [
     "the same seed repeats and another seed differs",
+    true
+   ],
+   [
+    "worker: programs run in a worker",
+    true
+   ],
+   [
+    "worker: tests/builtins.kilat",
+    true
+   ],
+   [
+    "worker: tests/json.kilat",
+    true
+   ],
+   [
+    "worker: tests/language.kilat",
+    true
+   ],
+   [
+    "worker: tests/maps.kilat",
+    true
+   ],
+   [
+    "worker: tests/tour.kilat",
+    true
+   ],
+   [
+    "worker: tests/units.kilat",
+    true
+   ],
+   [
+    "worker: examples/beam_deflection.kilat",
+    true
+   ],
+   [
+    "worker: examples/bolt_joint.kilat",
+    true
+   ],
+   [
+    "worker: examples/bom_mass.kilat",
+    true
+   ],
+   [
+    "worker: examples/hello.kilat",
+    true
+   ],
+   [
+    "worker: examples/shaft_power.kilat",
+    true
+   ],
+   [
+    "worker: check finds a unit error",
+    true
+   ],
+   [
+    "worker: check does not run the program",
+    true
+   ],
+   [
+    "worker: run reports a compile error",
+    true
+   ],
+   [
+    "worker: runtime error keeps earlier output",
+    true
+   ],
+   [
+    "worker: fuel limit stops an endless loop",
+    true
+   ],
+   [
+    "worker: memory limit stops a growing list",
+    true
+   ],
+   [
+    "worker: stop signal ends an endless loop",
+    true
+   ],
+   [
+    "worker: stop signal ends a loop of slow turns",
+    true
+   ],
+   [
+    "worker: stop signal ends a loop of host calls",
+    true
+   ],
+   [
+    "worker: host request is refused by default",
+    true
+   ],
+   [
+    "worker: host function answers",
+    true
+   ],
+   [
+    "worker: async host function answers",
+    true
+   ],
+   [
+    "worker: host function that throws gives Err",
+    true
+   ],
+   [
+    "worker: input is refused without a host",
+    true
+   ],
+   [
+    "worker: clock works without a host",
+    true
+   ],
+   [
+    "worker: files option feeds import",
+    true
+   ],
+   [
+    "worker: import without the file is an error",
+    true
+   ],
+   [
+    "worker: printLast prints the final value",
+    true
+   ],
+   [
+    "worker: without printLast nothing is printed",
+    true
+   ],
+   [
+    "worker: text survives the trip",
+    true
+   ],
+   [
+    "worker: output arrives in pieces",
+    true
+   ],
+   [
+    "worker: seed 7",
+    true
+   ],
+   [
+    "worker: seed 7 again",
+    true
+   ],
+   [
+    "worker: seed 8",
+    true
+   ],
+   [
+    "worker: very deep nesting is contained",
+    true
+   ],
+   [
+    "worker: a run after that still works",
+    true
+   ],
+   [
+    "worker: the page stays smooth during one long step",
+    true
+   ],
+   [
+    "worker: stop signal ends one long step",
+    true
+   ],
+   [
+    "worker: the same seed repeats and another seed differs",
     true
    ]
   ],
@@ -876,6 +1050,10 @@
     true
    ],
    [
+    "tests/maps.kilat",
+    true
+   ],
+   [
     "tests/tour.kilat",
     true
    ],
@@ -906,15 +1084,15 @@
   ],
   "failures": [],
   "timings": {
-   "playgroundLongestFreezeMs": 154,
-   "playgroundLimitMs": 104,
-   "pluginCharacters": 352472,
-   "pluginFirstResultMs": 165,
-   "pluginReadyMs": 2124,
-   "pluginLimitMs": 42,
-   "pluginRedrawMs": 17,
-   "pluginLongestFreezeMs": 233,
-   "pluginLongTextLimitMs": 2933,
+   "playgroundLongestFreezeMs": 119,
+   "playgroundLimitMs": 114,
+   "pluginCharacters": 361965,
+   "pluginFirstResultMs": 71,
+   "pluginReadyMs": 494,
+   "pluginLimitMs": 49,
+   "pluginRedrawMs": 15,
+   "pluginLongestFreezeMs": 132,
+   "pluginLongTextLimitMs": 3185,
    "pluginTimeLimitMs": 10071
   }
  },

@@ -82,7 +82,11 @@ def native_toolchain():
         return []
     listing = subprocess.run(["rustup", "toolchain", "list"], capture_output=True, text=True).stdout
     names = [line.split()[0] for line in listing.splitlines() if line.strip()]
-    default = next((line.split()[0] for line in listing.splitlines() if "(default)" in line), "")
+    # rustup marks the default as "(default)" or, since 1.28, "(active, default)".
+    default = next(
+        (line.split()[0] for line in listing.splitlines() if "default" in line.partition("(")[2]),
+        "",
+    )
     if "-msvc" not in default or has_microsoft_linker():
         return []
     gnu = next((name for name in names if name.endswith("-pc-windows-gnu")), None)

@@ -2,7 +2,7 @@
 
 Kilat is a small programming language for engineering calculations and safe scripts.
 Units and types are checked before a program runs, so `2 m + 3 kg` is refused instead of
-printing a number. The whole language is one program of 1.1 MB with no dependencies.
+printing a number. The whole language is one program of 1.3 MB with no dependencies.
 The same engine also runs in a web page, inside Python, and as a plugin for the Cairn notes app.
 "Kilat" is the Malay word for lightning.
 
@@ -43,7 +43,7 @@ Not overall. Python has the libraries, the tools and the community, and Kilat ha
 Kilat is aimed at one job: calculations and small scripts that have to be right and have to be
 safe to run, including code written by an AI model. The numbers below show where it is ahead on
 that job and where it is behind. A script copied them from `judge_report.json`, which
-`python judge.py` writes. Measured on 2026-11-11 with kilat 0.1.0 and CPython 3.13.2
+`python judge.py` writes. Measured on 2026-11-12 with kilat 0.2.0 and CPython 3.13.2
 on Windows 10, Intel(R) Core(TM) Ultra 7 258V.
 
 ### Mistakes found before the program runs
@@ -82,56 +82,79 @@ Python is used without NumPy.
 
 | Benchmark | Kilat (s) | CPython (s) | Times faster | Without start-up |
 |---|---|---|---|---|
-| collatz | 0.345 | 0.775 | 2.25 | 2.09 |
-| fib | 0.087 | 0.307 | 3.53 | 2.98 |
-| loop_sum | 0.121 | 0.540 | 4.45 | 4.11 |
-| mandelbrot | 0.143 | 0.657 | 4.60 | 4.32 |
-| map_count | 0.278 | 0.284 | 1.02 | 0.80 |
-| matmul | 0.085 | 0.247 | 2.92 | 2.30 |
-| nbody | 0.145 | 0.593 | 4.10 | 3.80 |
-| sieve | 0.146 | 0.288 | 1.98 | 1.58 |
-| sort | 0.091 | 0.761 | 8.37 | 8.21 |
-| strings | 0.228 | 0.225 | 0.99 | 0.71 |
+| collatz | 0.290 | 0.940 | 3.24 | 3.05 |
+| fib | 0.108 | 0.356 | 3.30 | 2.78 |
+| loop_sum | 0.161 | 0.627 | 3.90 | 3.57 |
+| mandelbrot | 0.190 | 0.823 | 4.32 | 4.06 |
+| map_count | 0.246 | 0.324 | 1.32 | 1.06 |
+| matmul | 0.107 | 0.276 | 2.58 | 2.02 |
+| nbody | 0.190 | 0.719 | 3.78 | 3.51 |
+| sieve | 0.115 | 0.295 | 2.56 | 2.04 |
+| sort | 0.081 | 0.670 | 8.24 | 7.87 |
+| strings | 0.144 | 0.214 | 1.49 | 1.04 |
 
-Geometric mean: 2.82 times faster for the whole process and 2.43 with start-up taken out.
-Start-up costs Kilat 7 ms of CPU and CPython 68 ms.
-With start-up taken out, Kilat is slower than CPython on: `map_count`, `strings`. CPython keeps the hash of a text
-once it is computed and has a faster allocator for small objects. Kilat is a bytecode interpreter,
-so compiled and JIT languages are faster than both, and Python with NumPy would win the array benchmarks.
+Geometric mean: 3.06 times faster for the whole process and 2.62 with start-up taken out.
+Start-up costs Kilat 5 ms of CPU and CPython 70 ms.
+With start-up taken out, Kilat is slower than CPython on: none; about level (within 5 %) on: `strings`.
+Text and map work is where the two are closest, because CPython's text and dictionary code is very good.
+Kilat is a bytecode interpreter, so compiled and JIT languages are faster than both, and Python with
+NumPy would win the array benchmarks. The goal set for this version was 5 times CPython; it was not reached.
 
 ### Size and dependencies
 
 | Piece | Bytes |
 |---|---|
-| kilat program | 1,144,832 |
-| kilat library | 1,633,792 |
-| docs/kilat.wasm | 715,723 |
-| docs/kilat.js | 9,490 |
-| main.js (Cairn plugin) | 352,472 |
+| kilat program | 1,271,808 |
+| kilat library | 1,719,296 |
+| docs/kilat.wasm | 722,701 |
+| docs/kilat.js | 16,007 |
+| main.js (Cairn plugin) | 361,965 |
 
 The program and the library need only files that are part of Windows. The WebAssembly engine has 0 imports, so it cannot reach anything the page does not hand it.
 
 ### Checks behind these numbers
 
-- Language tests: 5 of 5.
-- The Python library prints the same as the program: 10 of 10.
+- Language tests: 6 of 6.
+- The Python library prints the same as the program: 11 of 11.
 - Sandbox (fuel limit, memory limit, files refused without a flag): 6 of 6.
-- In a headless browser: engine checks 37 of 37, playground and Cairn plugin checks 44 of 44.
-- In that run the plugin showed its first result 165 ms after the block was drawn, and the longest stall of a page during a run was 233 ms.
+- In a headless browser: engine checks 79 of 79, playground and Cairn plugin checks 44 of 44.
+- In that run the plugin showed its first result 71 ms after the block was drawn, and the longest stall of a page during a run was 132 ms.
+
+## New in 0.2
+
+- Faster maps, text splitting and small-object allocation.
+- `mean`, `median` and `stddev` (sample form) for lists of numbers. They keep the unit:
+
+```kilat
+let gaps = [1.9 mm, 2.1 mm, 2.0 mm, 2.4 mm]
+print("mean {mean(gaps):mm.2}, median {median(gaps):mm.2}, spread {stddev(gaps):mm.3}")
+```
+
+```text
+mean 2.10 mm, median 2.05 mm, spread 0.216 mm
+```
+
+- The web engine can run in a Web Worker (`{ worker: true }`).
 
 ## Where Kilat is behind
 
 - No packages and no library ecosystem. No debugger, editor support or interactive prompt.
 - No classes, traits, async or threads.
-- New and unproven: version 0.1, one author, tested on one Windows PC.
+- New and unproven: version 0.2, one author, tested on one Windows PC.
 - Fuel counts work (loop turns, calls, the size of long text and list operations), not seconds.
   The time to reach a fuel limit varies, so an app that needs a time limit must add a clock.
-- The web engine runs on the page's main thread and gives the page a turn every 40 ms.
-- The Cairn plugin was tested against a stand-in for Cairn's plugin loader, not inside the app,
-  and it is not in Cairn's plugin catalogue yet. It needs `DecompressionStream`. It keeps the result
+- The web engine runs on the page's main thread by default and gives the page a turn every 40 ms.
+  Worker mode keeps the page smooth and stops at once, but the same program took 1.5 to 2.5 times
+  longer in headless Edge. That figure comes from a separate probe page run by hand, not from `judge.py`.
+- The Cairn plugin was tested against a stand-in for Cairn's plugin loader, not inside the app, and it is not in Cairn's plugin catalogue yet.
+  It needs `DecompressionStream`. It keeps the result
   of each program text, so `rand()` and `clock()` stay the same until the blocks are run again.
   A block is stopped after 10 seconds.
 - `install.cmd` has only been exercised with `/dry-run`.
+- The native program uses its own allocator for small blocks. Memory for small blocks is kept at its
+  highest level until the program ends, and the command-line program does not free memory on exit.
+  `unsafe` Rust is confined to two files, `src/alloc.rs` and `src/ffi.rs`.
+- The memory limit is an estimate. It does not count the saved hash of each text.
 - The limits of the language itself are listed at the end of the [language guide](docs/LANGUAGE.md).
 
 ## Use it
@@ -159,6 +182,10 @@ Copy `docs/kilat.js` and `docs/kilat.wasm` next to your page.
   console.log(result.ok, result.output);
 </script>
 ```
+
+`loadKilat(undefined, { worker: true })` runs the engine in a Web Worker instead. The result has
+`inWorker` set to `true`, the page stays responsive during long runs, and an abort signal stops a run
+at once. It is opt-in because it measured slower (see above).
 
 ### Python
 

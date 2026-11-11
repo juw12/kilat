@@ -364,6 +364,13 @@ impl Heap {
         Ok(())
     }
 
+    /// A hint that `n` more objects are about to be made; it never fails.
+    pub fn reserve(&mut self, n: usize) {
+        if self.free == NONE {
+            self.objs.reserve(n);
+        }
+    }
+
     #[inline]
     pub fn alloc(&mut self, obj: Obj) -> Result<Value, Trap> {
         self.charge(obj.size())?;
