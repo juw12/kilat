@@ -7,6 +7,7 @@ The same engine also runs in a web page, inside Python, and as a plugin for the 
 "Kilat" is the Malay word for lightning.
 
 - Try it in the browser: <https://juw12.github.io/kilat/>
+- Download for Windows: <https://github.com/juw12/kilat/releases/latest>
 - Language guide: [docs/LANGUAGE.md](docs/LANGUAGE.md)
 - Measured results: [RESULTS.md](RESULTS.md)
 
@@ -119,6 +120,17 @@ The program and the library need only files that are part of Windows. The WebAss
 - Sandbox (fuel limit, memory limit, files refused without a flag): 6 of 6.
 - In a headless browser: engine checks 79 of 79, playground and Cairn plugin checks 44 of 44.
 - In that run the plugin showed its first result 71 ms after the block was drawn, and the longest stall of a page during a run was 132 ms.
+- Fuzz and differential tests (`python tests/fuzz_test.py`, seed 20261112): 11,607 generated programs
+  and expressions, 0 failures. No crash, no hang, and `check` agreed with `run` every time.
+  - 6,061 broken or random programs and 46 deep or runaway ones all ended as an ordinary result or error.
+  - 4,000 random number expressions gave the same answer as a Python reference; 299 of them overflow
+    or divide by zero, and Kilat refused each of those at run time.
+  - 600 `mean` / `median` / `stddev` cases agreed with Python's `statistics`, 600 sums of units agreed,
+    and 300 sums of different dimensions were all refused before running.
+  - The test and its reference were written by the author of Kilat. Before the run, the harness was
+    shown to catch a planted crash and a planted hang.
+- The release download: `kilat.exe` fetched from the 0.2.0 release page has the same SHA-256 as the
+  local build, the zip holds the same program, and the five examples print the same lines.
 
 ## New in 0.2
 
@@ -135,6 +147,9 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
 ```
 
 - The web engine can run in a Web Worker (`{ worker: true }`).
+- GlowCode, a Glow page where a person or a model writes Kilat and the checker refuses a wrong
+  program before it runs. It is an open pull request, not merged yet:
+  https://github.com/juw12/projects/pull/53
 
 ## Where Kilat is behind
 
@@ -146,15 +161,22 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
 - The web engine runs on the page's main thread by default and gives the page a turn every 40 ms.
   Worker mode keeps the page smooth and stops at once, but the same program took 1.5 to 2.5 times
   longer in headless Edge. That figure comes from a separate probe page run by hand, not from `judge.py`.
-- The Cairn plugin was tested against a stand-in for Cairn's plugin loader, not inside the app, and it is not in Cairn's plugin catalogue yet.
+- The Cairn plugin was tested in Cairn's real web app with its demo brain in headless Edge: 8 of 8 checks, passed twice in a row (`python tests/cairn_app_test.py <cairn checkout>`). A note shows a kilat block's result in Split and Preview modes, not in Write mode. The catalogue entry is an open pull request (https://github.com/juw12/cairn/pull/35). Cairn's in-app install from GitHub and Cairn's desktop build were not tested.
   It needs `DecompressionStream`. It keeps the result
   of each program text, so `rand()` and `clock()` stay the same until the blocks are run again.
   A block is stopped after 10 seconds.
-- `install.cmd` has only been exercised with `/dry-run`.
+- `install.cmd` was run with `/dry-run` from the unpacked release zip; a real install was not run. The release files are unsigned, so Windows may show a SmartScreen prompt.
 - The native program uses its own allocator for small blocks. Memory for small blocks is kept at its
   highest level until the program ends, and the command-line program does not free memory on exit.
   `unsafe` Rust is confined to two files, `src/alloc.rs` and `src/ffi.rs`.
 - The memory limit is an estimate. It does not count the saved hash of each text.
+- Known fault, found by the fuzz test and not fixed yet: when a program runs out of fuel, the message
+  can name the wrong place (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop).
+  The program is still stopped correctly; only the reported location is wrong.
+- The bug set, the fuzz test and its reference were all written by the author. Nobody else has written
+  a bug set for Kilat or repeated these measurements on another PC.
+- GlowCode was tested in headless Edge with a stand-in for the model: 17 of 17 page actions in two runs.
+  It was not tried with a real model, at phone width, or offline.
 - The limits of the language itself are listed at the end of the [language guide](docs/LANGUAGE.md).
 
 ## Use it

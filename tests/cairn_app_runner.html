@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kilat inside the real Cairn app</title>
+<link rel="icon" href="data:,">
+</head>
+<body>
+<script>
+  // Tells the test script when the module below cannot even start.
+  window.addEventListener("error", function (event) {
+    if (window.reported) return;
+    window.reported = true;
+    fetch("/report", { method: "POST", body: JSON.stringify({ fatal: String(event.message || event.error) }) });
+  });
+</script>
+<script type="module">
+  // Opens Cairn's own web app (its docs folder, staged by tests/cairn_app_test.py) in a frame,
+  // installs main.js through Cairn's real plugin loader and checks what Cairn then draws.
+  // Nothing here stands in for Cairn: the loader, the Markdown renderer, the note drawer and
+  // the Plugins page are the app's own code.
+
+  const results = [];
+  const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+  async function until(test, timeoutMs = 20000) {
+    const end = performance.now() + timeoutMs;
+    while (performance.now() < end) {
+      let value = null;
+      try {
+        value = test();
+      } catch {
+        value = null;
+      }
+      if (value) return value;
+      await sleep(25);
+    }
+    try {
+      return test() || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function short(value) {
+    const text = JSON.stringify(value) ?? String(value);
+    return text.length > 240 ? text.slice(0, 240) + "..." : text;
+  }
+
+  const same = (label, actual, expected) =>
+    actual === expected ? [] : [`${label} is ${short(actual)}, expected ${short(expected)}`];
+  const holds = (problem, condition) => (condition ? [] : [problem]);
+
+  async function check(name, body) {
+    let problems;
+    try {
+      problems = (await body()) ?? [];
+    } catch (problem) {
+      problems = [`threw: ${problem?.stack ?? problem}`];
+    }
+    results.push({ name, problems, seconds: Math.round(performance.now() / 100) / 10 });
+    const note = `${name} [${problems.length ? "FAIL" : "ok"} at ${Math.round(performance.now() / 1000)} s]`;
+    fetch("/progress", { method: "POST", body: note }).catch(() => {});
+  }
+
+  const expected = await (await fetch("/cases.json")).json();
+  const FENCE = "```";
+
+  const frame = document.createElement("iframe");
+  frame.style.cssText = "width: 1280px; height: 800px; border: 0;";
+  document.body.append(frame);
+
+  // Loads one of Cairn's modules inside the frame, so it is the same module instance the app uses.
+  const cairnModule = (path) => frame.contentWindow.eval(`import(${JSON.stringify(path)})`);
+
+  async function openCairn(address) {
+    const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+    frame.src = address;
+    await loaded;
+    const app = await until(() => {
+      const node = frame.contentDocument.querySelector("#app");
+      return node && !node.hidden ? node : null;
+    }, 40000);
+    if (!app) throw new Error("Cairn did not finish starting");
+    return {
+      plugins: await cairnModule("./plugins.js"),
+      state: await cairnModule("./state.js"),
+      drawer: await cairnModule("./drawer.js"),
+      vault: await cairnModule("./vault.js"),
+      app: await cairnModule("./app.js"),
+    };
+  }
+
+  const blockIn = (root, wanted) =>
+    [...root.querySelectorAll('.plugin-block[data-plugin-block="kilat"]')].find((block) =>
+      (block.querySelector(".kilat-source")?.textContent ?? "").includes(wanted));
+
+  async function finished(root, wanted) {
+    const block = await until(() => {
+      const found = blockIn(root, wanted);
+      const state = found?.querySelector(".kilat-result")?.dataset.kilat;
+      return found && state && state !== "running" ? found : null;
+    }, 30000);
+    if (!block) return null;
+    return {
+      state: block.querySelector(".kilat-result").dataset.kilat,
+      output: block.querySelector(".kilat-output")?.textContent ?? "",
+      error: block.querySelector(".kilat-error")?.textContent ?? "",
+    };
+  }
+
+  let cairn = null;
+  let notePath = "";
+
+  await check("Cairn's web app starts with its demo brain", async () => {
+    cairn = await openCairn("index.html?demo");
+    return [
+      ...holds("the demo brain has no notes", cairn.state.state.notes.length > 0),
+      ...same("plugin API version", cairn.plugins.API_VERSION, 1),
+    ];
+  });
+
+  if (cairn) {
+    await check("Cairn's own loader installs main.js", async () => {
+      const installed = await cairn.plugins.installPlugin("plugins/kilat.js", { quiet: true });
+      const store = cairn.plugins.loadStore();
+      const entry = store.installed.kilat;
+      return [
+        ...same("id", installed.id, "kilat"),
+        ...same("name", installed.name, "Kilat"),
+        ...same("version", installed.version, expected.version),
+        ...holds("community plugins are not switched on", store.enabled === true),
+        ...holds("the plugin is not stored as enabled", entry?.enabled === true),
+        ...same("stored code length", entry?.code.length, expected.codeLength),
+        ...same("plugins with problems", cairn.plugins.pluginProblems().join(","), ""),
+      ];
+    });
+
+    await check("Kilat's commands are in Cairn's command list", async () => {
+      const labels = cairn.plugins.pluginCommands().map((command) => command.label);
+      return [
+        ...holds(`no insert command in ${short(labels)}`, labels.includes("Kilat: insert an example block")),
+        ...holds(`no run-again command in ${short(labels)}`, labels.includes("Kilat: run the blocks again")),
+      ];
+    });
+
+    await check("Cairn's Markdown renderer hands a kilat block to the plugin", async () => {
+      const markdown = `Stress check\n\n${FENCE}kilat\n${expected.stress.source}\n${FENCE}\n`;
+      const html = cairn.vault.renderNote({ path: "", body: markdown }, { source: markdown, tasks: false });
+      const holder = frame.contentDocument.createElement("div");
+      holder.id = "kilat-check";
+      holder.innerHTML = html;
+      frame.contentDocument.body.append(holder);
+      const shown = await finished(holder, "250 N");
+      holder.remove();
+      if (!shown) return [`no finished block; Cairn drew ${short(html)}`];
+      return [
+        ...same("state", shown.state, "ok"),
+        ...same("output", shown.output, expected.stress.output),
+      ];
+    });
+
+    await check("a note with kilat blocks, opened in Cairn, shows the results", async () => {
+      const body = [
+        "A load case.",
+        "",
+        `${FENCE}kilat`,
+        expected.note.source,
+        FENCE,
+        "",
+        "And a mistake that must be refused:",
+        "",
+        `${FENCE}kilat`,
+        expected.mistake.source,
+        FENCE,
+        "",
+      ].join("\n");
+      const note = await cairn.state.createNote({ type: "note", title: "Kilat check", body });
+      notePath = note.path;
+      cairn.drawer.openNote(note.path);
+      // A note opens in Cairn's Write mode (the text box only). Results are drawn in Split and
+      // Preview, so press the Preview tab the way a person would.
+      const previewTab = await until(
+        () => frame.contentDocument.querySelector('#drawer-layer [data-editor-mode="preview"]'),
+        10000,
+      );
+      if (!previewTab) return ["the open note has no Preview tab"];
+      previewTab.click();
+      const good = await finished(frame.contentDocument, "cairn note ok");
+      const bad = await finished(frame.contentDocument, "2 m + 3 kg");
+      if (!good || !bad) return [`blocks not drawn in the open note (good ${short(good)}, bad ${short(bad)})`];
+      return [
+        ...same("good block state", good.state, "ok"),
+        ...same("good block output", good.output, expected.note.output),
+        ...holds(`the mistake was not refused: ${short(bad)}`, bad.state !== "ok"),
+        ...holds(`the refusal does not name the units: ${short(bad.error)}`, bad.error.includes(expected.mistake.errorHas)),
+        ...same("plugins with problems", cairn.plugins.pluginProblems().join(","), ""),
+      ];
+    });
+
+    await check("Cairn's Plugins page lists Kilat", async () => {
+      cairn.app.setView("plugins");
+      const listed = await until(() => {
+        const page = frame.contentDocument.body.textContent;
+        return page.includes("Kilat") && page.includes(expected.version);
+      }, 10000);
+      return holds("the Plugins page does not show Kilat and its version", Boolean(listed));
+    });
+
+    await check("after a reload Cairn starts the plugin again from its own storage", async () => {
+      cairn = await openCairn("index.html?demo");
+      const labels = cairn.plugins.pluginCommands().map((command) => command.label);
+      const markdown = `${FENCE}kilat\n${expected.stress.source}\n${FENCE}\n`;
+      const holder = frame.contentDocument.createElement("div");
+      holder.innerHTML = cairn.vault.renderNote({ path: "", body: markdown }, { source: markdown, tasks: false });
+      frame.contentDocument.body.append(holder);
+      const shown = await finished(holder, "250 N");
+      holder.remove();
+      return [
+        ...holds(`commands are missing after the reload: ${short(labels)}`, labels.includes("Kilat: run the blocks again")),
+        ...same("output after the reload", shown?.output, expected.stress.output),
+        ...same("plugins with problems", cairn.plugins.pluginProblems().join(","), ""),
+      ];
+    });
+
+    await check("turning the plugin off and removing it leaves Cairn clean", async () => {
+      await cairn.plugins.setPluginEnabled("kilat", false);
+      const afterOff = cairn.plugins.pluginCommands().map((command) => command.label);
+      cairn.plugins.removePlugin("kilat");
+      const store = cairn.plugins.loadStore();
+      return [
+        ...holds(`commands remain after turning off: ${short(afterOff)}`, !afterOff.some((label) => label.startsWith("Kilat"))),
+        ...holds("the plugin is still stored after removal", !store.installed.kilat),
+        ...holds("a Kilat style sheet is left behind", !frame.contentDocument.querySelector('style[data-plugin="kilat"]')),
+      ];
+    });
+  }
+
+  // Cairn's frame is no longer needed; taking it out also ends anything it still has running.
+  frame.remove();
+  window.reported = true;
+  await fetch("/report", {
+    method: "POST",
+    body: JSON.stringify({ userAgent: navigator.userAgent, notePath, results }),
+  });
+</script>
+</body>
+</html>

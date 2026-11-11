@@ -96,3 +96,44 @@ Times seen in the browser checks, in milliseconds unless the name says otherwise
 - `pluginReadyMs`: 494
 - `pluginRedrawMs`: 15
 - `pluginTimeLimitMs`: 10071
+
+## Fuzz and differential tests
+
+Added by hand from the output of `python tests/fuzz_test.py --jobs 6` (seed 20261112, 200,000 fuel and
+16 MB per run). `judge.py` does not run this test, so rerunning `judge.py` will drop this section.
+The test and its Python reference were written by the author of Kilat.
+
+| Kind of case | Cases | What must hold |
+|---|---|---|
+| Deep or runaway programs | 46 | ends as a result or an ordinary error |
+| Corpus files, damaged copies, random tokens | 6,061 | no crash, no hang, `check` agrees with `run` |
+| Random Int, Float and Bool expressions | 4,000 | same answer as the Python reference |
+| `mean`, `median`, `stddev` | 600 | same answer as Python's `statistics` |
+| Sums of lengths, masses and times | 600 | same answer as the reference |
+| Sums of different dimensions | 300 | refused before running |
+| Total | 11,607 | 0 failures |
+
+- How the runs ended: 5,670 finished, 5,552 refused before running, 314 run-time errors, 67 fuel stops,
+  4 memory stops.
+- 299 of the 4,000 expressions overflow or divide by zero; each was refused at run time as expected.
+- Worker restarts: 0. The run took 591 s on a heavily loaded PC; the longest single case took 37 s
+  there (the hang limit was 60 s).
+- Before the run the harness caught a planted crash and a planted hang (`--selftest`).
+- One fault was found while writing the test: a fuel stop can report the wrong place
+  (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop). It is not fixed.
+
+## Release download check
+
+Added by hand from a separate script that downloads the 0.2.0 release files.
+
+| Check | Result |
+|---|---|
+| `kilat.exe` from the release page | 1,271,808 bytes, SHA-256 same as the local build |
+| `kilat-windows-x64.zip` | 10 files; the `kilat.exe` inside has the same SHA-256 |
+| `kilat --version` on the download | `kilat 0.2.0` |
+| The five examples | each prints the same lines as the local build |
+| `print(2 m + 3 kg)` | refused: unit mismatch, cannot add m and kg |
+
+SHA-256 of `kilat.exe`: `6b07ba0dacfeb3fb7d83f57385594a810e02f1874b749e19994ab118ec312c9d`
+
+`install.cmd` was only run with `/dry-run`. The files are unsigned.
