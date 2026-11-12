@@ -148,9 +148,39 @@ Findings:
 
 Still not verified: the six model-conversation cases in GlowCode; the live pages in a real browser session; the Cairn desktop build; the two Python 3.10 errors on main itself.
 
-## Handoff
+## Handoff (round 3, closed)
 
 - Done: all round 3 follow-ups (see above).
 - In progress: nothing running.
 - Left: nothing in the queue.
-- Next, if wanted: decide the relay token test (Windows-only check, or real protection off Windows); decide Python 3.10 for the Cairn command line (fix option order, or drop 3.10).
+- Next, if wanted: decide the relay token test (Windows-only check, or real protection off Windows); decide Python 3.10 for the Cairn command line (fix option order, or drop 3.10). Both decided in round 4.
+
+## Round 4 (2026-11-12 afternoon)
+
+Asked: finish the "not verified" items. The owner decided both open points: the relay sealing check is Windows-only, and Cairn's tests run on the latest Python only. No new judging; the hone score stays at 7.61 (self-judged, below 8.5).
+
+- [x] Both decisions, in juw12/cairn pull request 37 (https://github.com/juw12/cairn/pull/37), merged as f0f7c42. The test matrix is `3.x` instead of 3.10 and 3.13. The sealing check in the relay token test runs on Windows only; the round trip is still checked everywhere.
+- [x] One more test fix in the same pull request. Another change on main (ec335ad) made the app fetch notes with GraphQL; the GitHub stand-in used by the tests did not answer that, so 13 sign-in tests failed on a console error. The stand-in now answers it. No check was loosened and no app code was changed.
+- [x] Cairn's GitHub run is green. On the pull request (74f690b) and again on main after the merge (f0f7c42): 362 tests, OK, 2 skipped, Python 3.15.2. Before: 1 failure on ce2fae0, 14 failures on ec335ad.
+- [x] Six model-conversation cases in GlowCode: 6 of 6 pass on Kilat 0.2.1, with scripted model replies on a local copy.
+- [x] Cairn's desktop server. The real desktop server code on a temporary brain, driven by a headless browser: install Kilat from the catalogue, run a kilat block in a note, save the note to a real file, reload. First run 18 of 19: the page reload timed out after 30 s. Second run with extra logging 21 of 21: the reload took 0.8 s, with no open requests and no dialogs.
+- [ ] Live pages in a real browser session: not done here. A browser on the live address would go out through the network proxy. Left as a manual check for the owner.
+- [ ] The two Python 3.10 errors: not fixed. Python 3.10 is no longer tested.
+
+Findings:
+
+- The reload timeout in the first desktop run was not reproduced. The PC was busy at the time (that run took 190 s, the second 94 s). The cause is not proven.
+- `pyproject.toml`, `README.md` and `docs/install.ps1` in Cairn still say Python 3.10+. Nothing checks that any more. Left for the owner: raise the stated minimum, or leave it.
+
+- Assumed: "latest Python" means the newest release the test runner offers (`3.x`), which was 3.15.2 on the day.
+- Assumed: fixing the GitHub stand-in belongs in the same pull request, because the run could not go green without it.
+- Assumed: browser checks may run on a local server with bytes fetched beforehand and scripted model replies, so the headless browser never goes out through the network proxy.
+
+Still not verified: a real model answering in GlowCode over the internet; the live pages in a real browser session; the Cairn app window itself and the installed app (only its server code was run).
+
+## Handoff
+
+- Done: round 4 (see above).
+- In progress: nothing running.
+- Left: nothing in the queue.
+- Next, if wanted: open GlowCode and the Cairn app once by hand; decide whether Cairn's stated minimum Python should move up from 3.10.
