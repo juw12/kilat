@@ -123,18 +123,31 @@ The test and its Python reference were written by the author of Kilat.
   (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop). It is fixed in 0.2.1, and
   `python tests/fuel_location_test.py` checks four cases (4 of 4).
 
-## Release download check (0.2.0)
+## Release download check (0.2.1)
 
-Added by hand from a separate script that downloads the 0.2.0 release files.
+Added by hand from a separate script that downloads the 0.2.1 release files.
 
 | Check | Result |
 |---|---|
 | `kilat.exe` from the release page | 1,271,808 bytes, SHA-256 same as the local build |
 | `kilat-windows-x64.zip` | 10 files; the `kilat.exe` inside has the same SHA-256 |
-| `kilat --version` on the download | `kilat 0.2.0` |
+| `kilat --version` on the download | `kilat 0.2.1` |
 | The five examples | each prints the same lines as the local build |
 | `print(2 m + 3 kg)` | refused: unit mismatch, cannot add m and kg |
 
-SHA-256 of `kilat.exe`: `6b07ba0dacfeb3fb7d83f57385594a810e02f1874b749e19994ab118ec312c9d`
+SHA-256 of `kilat.exe`: `73b1173f17c6a447e776453405c11f2e5587086c17a05efb94434d3e552eb4d3`
 
 `install.cmd` was only run with `/dry-run`. The files are unsigned.
+
+## Reruns on GitHub's machines (0.2.1)
+
+Added by hand from the results of `.github/workflows/ci.yml` for the 0.2.1 commit. Each machine builds
+Kilat and runs `judge.py --quick` (2 runs per program instead of 5) and the fuzz test. The script and
+the programs are the author's; no other person repeated the measurements.
+
+| Machine | CPython | Speed, whole process | Speed, net of start-up | Slower than CPython | Bugs refused | Fuzz cases | Fuzz failures |
+|---|---|---|---|---|---|---|---|
+| Windows x64 | 3.13.17 | 2.82 | 2.76 | 0 of 10 | 20 of 20 | 11,607 | 0 |
+| Linux x86_64 | 3.13.18 | 2.85 | 2.80 | 0 of 10 | 20 of 20 | 11,607 | 0 |
+
+Language tests 6 of 6, library tests 11 of 11 and sandbox tests 6 of 6 on both machines.

@@ -130,9 +130,13 @@ The program and the library need only files that are part of Windows. The WebAss
   - The test and its reference were written by the author of Kilat. Before the run, the harness was
     shown to catch a planted crash and a planted hang.
 - Fuel stop location (`python tests/fuel_location_test.py`): 4 of 4.
-- The release download check was last run for 0.2.0: `kilat.exe` fetched from that release page had
+- The release download check was last run for 0.2.1: `kilat.exe` fetched from that release page had
   the same SHA-256 as the build it came from, the zip held the same program, and the five examples
   printed the same lines.
+- Every push reruns `judge.py --quick` and the fuzz test on GitHub's Windows and Linux machines
+  (`.github/workflows/ci.yml`). For 0.2.1 both passed: 20 of 20 bugs refused, 11,607 fuzz cases
+  with 0 failures, speed against CPython 3.13 of 2.82 (2.76 net of start-up) on Windows and
+  2.85 (2.80 net) on Linux, from 2 runs each. Same script, same author; not the headline numbers.
 
 ## New in 0.2
 
@@ -153,20 +157,22 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
   function instead (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop).
   The fuzz test found this; `python tests/fuel_location_test.py` now checks four cases.
 - GlowCode, a Glow page where a person or a model writes Kilat and the checker refuses a wrong
-  program before it runs. It is an open pull request, not merged yet:
-  https://github.com/juw12/projects/pull/53
+  program before it runs. It is merged into Glow and live at
+  https://juw12.github.io/projects/glow/code/ (https://github.com/juw12/projects/pull/53).
+  The page still ships the 0.2.0 web engine, so the fuel stop fix above is not in it yet.
 
 ## Where Kilat is behind
 
 - No packages and no library ecosystem. No debugger, editor support or interactive prompt.
 - No classes, traits, async or threads.
-- New and unproven: version 0.2, one author, tested on one Windows PC.
+- New and unproven: version 0.2, one author. Measured on one Windows PC; the checks are also
+  rerun on GitHub's Windows and Linux machines on every push.
 - Fuel counts work (loop turns, calls, the size of long text and list operations), not seconds.
   The time to reach a fuel limit varies, so an app that needs a time limit must add a clock.
 - The web engine runs on the page's main thread by default and gives the page a turn every 40 ms.
   Worker mode keeps the page smooth and stops at once, but the same program took 1.5 to 2.5 times
   longer in headless Edge. That figure comes from a separate probe page run by hand, not from `judge.py`.
-- The Cairn plugin was tested in Cairn's real web app with its demo brain in headless Edge: 8 of 8 checks, passed twice in a row (`python tests/cairn_app_test.py <cairn checkout>`). A note shows a kilat block's result in Split and Preview modes, not in Write mode. The catalogue entry is an open pull request (https://github.com/juw12/cairn/pull/35). Cairn's in-app install from GitHub and Cairn's desktop build were not tested.
+- The Cairn plugin was tested in Cairn's real web app with its demo brain in headless Edge: 8 of 8 checks, passed twice in a row (`python tests/cairn_app_test.py <cairn checkout>`). A note shows a kilat block's result in Split and Preview modes, not in Write mode. The catalogue entry is merged (https://github.com/juw12/cairn/pull/35) and lists version 0.2.0. Cairn's in-app install from GitHub and Cairn's desktop build were not tested.
   It needs `DecompressionStream`. It keeps the result
   of each program text, so `rand()` and `clock()` stay the same until the blocks are run again.
   A block is stopped after 10 seconds.
@@ -176,7 +182,8 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
   `unsafe` Rust is confined to two files, `src/alloc.rs` and `src/ffi.rs`.
 - The memory limit is an estimate. It does not count the saved hash of each text.
 - The bug set, the fuzz test and its reference were all written by the author. Nobody else has written
-  a bug set for Kilat or repeated these measurements on another PC.
+  a bug set for Kilat. The measurements were repeated on GitHub's machines by the same script,
+  not by another person.
 - GlowCode was tested in headless Edge with a stand-in for the model: 17 of 17 page actions in two runs.
   It was not tried with a real model, at phone width, or offline.
 - The limits of the language itself are listed at the end of the [language guide](docs/LANGUAGE.md).
