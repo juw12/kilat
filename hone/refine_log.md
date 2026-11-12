@@ -68,3 +68,45 @@ Self-judge scores per criterion (rubric kilat-r2, weights 0.30 / 0.20 / 0.25 / 0
 - Sync done 2026-11-12: Kilat repo d7c2e2a (written through the GitHub API), landing page 80ad196, profile ffa5b63, portfolio text 5dda6f7 and c90b42a, Obsidian note and update log pushed, precedent log and vibe end run last.
 
 stop: no further round possible without an engine rebuild or outside reviewers (net speed of 3 or more, an independent bug set, merged pull requests, independent reproduction); v1 kept, below DONE_SCORE 8.5.
+
+## Round 2 queue (user: "continue till finish", 2026-11-12 morning, PC no longer throttled)
+
+- Assumed: "continue till finish" = do the items under "Next" of the last report that do not need other people.
+- [ ] K. Fix the fuel-stop location fault (src/vm.rs `fail`: a fuel stop reports `pc`, not `pc - 1`), rebuild, rerun judge.py and the fuzz test
+- [ ] L. CI workflow that builds and reruns the checks on a GitHub machine (a rerun on a second machine, not a second person)
+- [ ] M. Merge the GlowCode pull request (CI green); merge the Cairn pull request only if its red check is the same failure as on main
+- [ ] N. Release with the fix, then sync README, landing page, profile, portfolio text, Obsidian, precedent log
+- Not possible without other people: an independent bug set and an independent judge.
+
+## Round 2 result (2026-11-12 morning)
+
+- [x] K. Done. A fuel stop now names the line that was running (src/vm.rs). Version 0.2.1 built. tests/fuel_location_test.py: 4 of 4. judge.py full run: every check passed. Fuzz: 11,607 cases, 0 failures, same outcome counts as 0.2.0.
+- [ ] L. Written and committed locally (6f1da96), not pushed, so it has not run on a GitHub machine yet. The Linux job is untested.
+- [ ] M. Not done. Both pull requests are still open. Checked before stopping: the GlowCode checks are green; the red check on the Cairn pull request is the same job and step as on Cairn's main branch (the name of the failing test could not be read).
+- [ ] N. Not done. No 0.2.1 release, and the landing page, profile and portfolio text still describe 0.2.0.
+
+Speed with 0.2.1 (judge.py, 5 runs, pinned, same PC): mean 3.11 for the whole process and 2.79 net of start-up; 10 of 10 programs faster than CPython. The two closest net results are map_count 1.12 and strings 1.12.
+
+- Assumed: stop tuning for speed in this round. The map and allocator code are already tuned; a net mean of 3.0 needs about 1.44x more on both strings and map_count, which is deeper engine work. The target of 3 net is not reached (2.79) and the goal of 5 is not reached.
+- Assumed: "continue till finish" includes merging the owner's own two pull requests under the rule in item M.
+
+Publishing stopped: git push is refused by the network proxy on this PC on every try (it asks git for a sign-in). How to publish from this PC is for the owner to decide. Local main holds 0.2.1; remote main is still dfdcf4f.
+
+Self-judge scores (rubric kilat-r2, same weights):
+
+| version | S1 speed | S2 safety | S3 usable today | S4 Cairn and Glow | S5 honest claims | total |
+|---|---|---|---|---|---|---|
+| v2 (0.2.1, local only) | 6.5 | 8.2 | 7.5 | 7.5 | 6.5 | 7.24 |
+
+- S1 v2: every program faster net, net mean 2.79 (was 2.62), still under 3.
+- S2 v2: the known fuel-location fault is fixed and has a regression test; the bug set and reference are still by the author.
+- S3, S4, S5 v2: unchanged, because 0.2.1 is not released, the pull requests are not merged and the CI rerun has not happened.
+
+stop: needs the owner for publishing. The gain of 0.19 is also under MIN_GAIN 0.3. v2 kept locally (judge.py, fuzz and the fuel test passed on the 0.2.1 build).
+
+## Handoff
+
+- Done: K (fix, rebuild, judge.py, fuzz, regression test), README and RESULTS numbers for 0.2.1, CI workflow file.
+- In progress: nothing running.
+- Left: push local main; watch the CI run; release 0.2.1 and repeat the download check; merge the two pull requests; update README lines that still say "open pull request" and "0.2.0" release; sync landing page, profile, portfolio text.
+- Next command, once pushing works: `git push origin main` in this folder.
