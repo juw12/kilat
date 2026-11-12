@@ -245,7 +245,10 @@ impl Vm {
 
     fn fail(&mut self, kind: ErrKind, msg: String) {
         let mut text = format!("runtime error: {msg}");
-        let mut pcs = vec![self.pc.saturating_sub(1)];
+        // A fuel stop happens between two instructions, so `pc` is the one that was about
+        // to run. Every other error happens inside an instruction, after `pc` moved past it.
+        let top = if matches!(kind, ErrKind::Fuel) { self.pc } else { self.pc.saturating_sub(1) };
+        let mut pcs = vec![top];
         pcs.extend(self.frames.iter().rev().map(|f| (f.ret_pc as usize).saturating_sub(1)));
         for (i, &pc) in pcs.iter().enumerate() {
             if i == 12 {

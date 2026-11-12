@@ -1,6 +1,6 @@
 # Measured results
 
-Written by `python judge.py` on 2026-11-12. Kilat kilat 0.2.0, CPython 3.13.2, Windows 10, Intel(R) Core(TM) Ultra 7 258V.
+Written by `python judge.py` on 2026-11-12. Kilat kilat 0.2.1, CPython 3.13.2, Windows 10, Intel(R) Core(TM) Ultra 7 258V.
 
 ## Speed against CPython
 
@@ -11,22 +11,22 @@ Wall-clock time on the development PC is dominated by how long a process takes t
 
 | Program | Kilat CPU s | CPython CPU s | Times faster | Net of start-up | Kilat wall s | CPython wall s |
 |---|---|---|---|---|---|---|
-| `collatz` | 0.290 | 0.940 | 3.24 | 3.05 | 0.333 | 1.174 |
-| `fib` | 0.108 | 0.356 | 3.30 | 2.78 | 0.118 | 0.384 |
-| `loop_sum` | 0.161 | 0.627 | 3.90 | 3.57 | 0.203 | 0.815 |
-| `mandelbrot` | 0.190 | 0.823 | 4.32 | 4.06 | 0.229 | 1.044 |
-| `map_count` | 0.246 | 0.324 | 1.32 | 1.06 | 0.289 | 0.365 |
-| `matmul` | 0.107 | 0.276 | 2.58 | 2.02 | 0.159 | 0.348 |
-| `nbody` | 0.190 | 0.719 | 3.78 | 3.51 | 0.235 | 0.882 |
-| `sieve` | 0.115 | 0.295 | 2.56 | 2.04 | 0.136 | 0.347 |
-| `sort` | 0.081 | 0.670 | 8.24 | 7.87 | 0.093 | 0.798 |
-| `strings` | 0.144 | 0.214 | 1.49 | 1.04 | 0.167 | 0.254 |
+| `collatz` | 0.153 | 0.514 | 3.35 | 3.18 | 0.161 | 0.536 |
+| `fib` | 0.059 | 0.197 | 3.33 | 2.88 | 0.062 | 0.207 |
+| `loop_sum` | 0.092 | 0.361 | 3.92 | 3.65 | 0.098 | 0.373 |
+| `mandelbrot` | 0.111 | 0.454 | 4.08 | 3.86 | 0.117 | 0.473 |
+| `map_count` | 0.136 | 0.184 | 1.35 | 1.12 | 0.145 | 0.193 |
+| `matmul` | 0.061 | 0.177 | 2.89 | 2.43 | 0.066 | 0.186 |
+| `nbody` | 0.130 | 0.580 | 4.46 | 4.29 | 0.137 | 0.673 |
+| `sieve` | 0.106 | 0.267 | 2.51 | 2.24 | 0.113 | 0.293 |
+| `sort` | 0.075 | 0.590 | 7.87 | 7.69 | 0.081 | 0.681 |
+| `strings` | 0.130 | 0.178 | 1.37 | 1.12 | 0.140 | 0.194 |
 
-- Geometric mean: 3.06 times faster for the whole process, 2.62 net of start-up.
-- Net of start-up Kilat is faster on 9 of 10 programs.
+- Geometric mean: 3.11 times faster for the whole process, 2.79 net of start-up.
+- Net of start-up Kilat is faster on 10 of 10 programs.
 - The target set before measuring was 5 times: not met.
 - The two languages print the same text on every program: yes.
-- Start-up: Kilat 5 ms of CPU (8 ms wall), CPython 70 ms (82 ms wall).
+- Start-up: Kilat 3 ms of CPU (4 ms wall), CPython 35 ms (39 ms wall).
 
 ## Sizes
 
@@ -34,9 +34,9 @@ Wall-clock time on the development PC is dominated by how long a process takes t
 |---|---|
 | kilat program | 1,271,808 |
 | kilat library | 1,719,296 |
-| docs/kilat.wasm | 722,701 |
+| docs/kilat.wasm | 722,723 |
 | docs/kilat.js | 16,007 |
-| main.js (Cairn plugin) | 361,965 |
+| main.js (Cairn plugin) | 362,037 |
 
 The kilat program needs only these libraries: api-ms-win-core-synch-l1-2-0.dll, bcryptprimitives.dll, kernel32.dll, msvcrt.dll, ntdll.dll.
 
@@ -86,20 +86,20 @@ The corpus was written by the author of Kilat, so read it as a list of what Kila
 
 Times seen in the browser checks, in milliseconds unless the name says otherwise:
 
-- `playgroundLimitMs`: 114
-- `playgroundLongestFreezeMs`: 119
-- `pluginCharacters`: 361965
-- `pluginFirstResultMs`: 71
-- `pluginLimitMs`: 49
-- `pluginLongTextLimitMs`: 3185
-- `pluginLongestFreezeMs`: 132
-- `pluginReadyMs`: 494
-- `pluginRedrawMs`: 15
-- `pluginTimeLimitMs`: 10071
+- `playgroundLimitMs`: 131
+- `playgroundLongestFreezeMs`: 100
+- `pluginCharacters`: 362037
+- `pluginFirstResultMs`: 65
+- `pluginLimitMs`: 52
+- `pluginLongTextLimitMs`: 3119
+- `pluginLongestFreezeMs`: 101
+- `pluginReadyMs`: 401
+- `pluginRedrawMs`: 18
+- `pluginTimeLimitMs`: 10092
 
 ## Fuzz and differential tests
 
-Added by hand from the output of `python tests/fuzz_test.py --jobs 6` (seed 20261112, 200,000 fuel and
+Added by hand from the output of `python tests/fuzz_test.py` (seed 20261112, 200,000 fuel and
 16 MB per run). `judge.py` does not run this test, so rerunning `judge.py` will drop this section.
 The test and its Python reference were written by the author of Kilat.
 
@@ -116,13 +116,14 @@ The test and its Python reference were written by the author of Kilat.
 - How the runs ended: 5,670 finished, 5,552 refused before running, 314 run-time errors, 67 fuel stops,
   4 memory stops.
 - 299 of the 4,000 expressions overflow or divide by zero; each was refused at run time as expected.
-- Worker restarts: 0. The run took 591 s on a heavily loaded PC; the longest single case took 37 s
-  there (the hang limit was 60 s).
+- Worker restarts: 0. The run took 10 s with 4 worker processes; the longest single case took 1.2 s
+  (the hang limit is 60 s). The run for 0.2.0, on a heavily loaded PC, took 591 s.
 - Before the run the harness caught a planted crash and a planted hang (`--selftest`).
-- One fault was found while writing the test: a fuel stop can report the wrong place
-  (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop). It is not fixed.
+- One fault was found while writing the test: in 0.2.0 a fuel stop could report the wrong place
+  (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop). It is fixed in 0.2.1, and
+  `python tests/fuel_location_test.py` checks four cases (4 of 4).
 
-## Release download check
+## Release download check (0.2.0)
 
 Added by hand from a separate script that downloads the 0.2.0 release files.
 

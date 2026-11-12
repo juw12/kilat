@@ -44,7 +44,7 @@ Not overall. Python has the libraries, the tools and the community, and Kilat ha
 Kilat is aimed at one job: calculations and small scripts that have to be right and have to be
 safe to run, including code written by an AI model. The numbers below show where it is ahead on
 that job and where it is behind. A script copied them from `judge_report.json`, which
-`python judge.py` writes. Measured on 2026-11-12 with kilat 0.2.0 and CPython 3.13.2
+`python judge.py` writes. Measured on 2026-11-12 with kilat 0.2.1 and CPython 3.13.2
 on Windows 10, Intel(R) Core(TM) Ultra 7 258V.
 
 ### Mistakes found before the program runs
@@ -83,20 +83,20 @@ Python is used without NumPy.
 
 | Benchmark | Kilat (s) | CPython (s) | Times faster | Without start-up |
 |---|---|---|---|---|
-| collatz | 0.290 | 0.940 | 3.24 | 3.05 |
-| fib | 0.108 | 0.356 | 3.30 | 2.78 |
-| loop_sum | 0.161 | 0.627 | 3.90 | 3.57 |
-| mandelbrot | 0.190 | 0.823 | 4.32 | 4.06 |
-| map_count | 0.246 | 0.324 | 1.32 | 1.06 |
-| matmul | 0.107 | 0.276 | 2.58 | 2.02 |
-| nbody | 0.190 | 0.719 | 3.78 | 3.51 |
-| sieve | 0.115 | 0.295 | 2.56 | 2.04 |
-| sort | 0.081 | 0.670 | 8.24 | 7.87 |
-| strings | 0.144 | 0.214 | 1.49 | 1.04 |
+| collatz | 0.153 | 0.514 | 3.35 | 3.18 |
+| fib | 0.059 | 0.197 | 3.33 | 2.88 |
+| loop_sum | 0.092 | 0.361 | 3.92 | 3.65 |
+| mandelbrot | 0.111 | 0.454 | 4.08 | 3.86 |
+| map_count | 0.136 | 0.184 | 1.35 | 1.12 |
+| matmul | 0.061 | 0.177 | 2.89 | 2.43 |
+| nbody | 0.130 | 0.580 | 4.46 | 4.29 |
+| sieve | 0.106 | 0.267 | 2.51 | 2.24 |
+| sort | 0.075 | 0.590 | 7.87 | 7.69 |
+| strings | 0.130 | 0.178 | 1.37 | 1.12 |
 
-Geometric mean: 3.06 times faster for the whole process and 2.62 with start-up taken out.
-Start-up costs Kilat 5 ms of CPU and CPython 70 ms.
-With start-up taken out, Kilat is slower than CPython on: none; about level (within 5 %) on: `strings`.
+Geometric mean: 3.11 times faster for the whole process and 2.79 with start-up taken out.
+Start-up costs Kilat 3 ms of CPU and CPython 35 ms.
+With start-up taken out, Kilat is slower than CPython on: none; about level (within 5 %) on: none.
 Text and map work is where the two are closest, because CPython's text and dictionary code is very good.
 Kilat is a bytecode interpreter, so compiled and JIT languages are faster than both, and Python with
 NumPy would win the array benchmarks. The goal set for this version was 5 times CPython; it was not reached.
@@ -107,9 +107,9 @@ NumPy would win the array benchmarks. The goal set for this version was 5 times 
 |---|---|
 | kilat program | 1,271,808 |
 | kilat library | 1,719,296 |
-| docs/kilat.wasm | 722,701 |
+| docs/kilat.wasm | 722,723 |
 | docs/kilat.js | 16,007 |
-| main.js (Cairn plugin) | 361,965 |
+| main.js (Cairn plugin) | 362,037 |
 
 The program and the library need only files that are part of Windows. The WebAssembly engine has 0 imports, so it cannot reach anything the page does not hand it.
 
@@ -119,7 +119,7 @@ The program and the library need only files that are part of Windows. The WebAss
 - The Python library prints the same as the program: 11 of 11.
 - Sandbox (fuel limit, memory limit, files refused without a flag): 6 of 6.
 - In a headless browser: engine checks 79 of 79, playground and Cairn plugin checks 44 of 44.
-- In that run the plugin showed its first result 71 ms after the block was drawn, and the longest stall of a page during a run was 132 ms.
+- In that run the plugin showed its first result 65 ms after the block was drawn, and the longest stall of a page during a run was 101 ms.
 - Fuzz and differential tests (`python tests/fuzz_test.py`, seed 20261112): 11,607 generated programs
   and expressions, 0 failures. No crash, no hang, and `check` agreed with `run` every time.
   - 6,061 broken or random programs and 46 deep or runaway ones all ended as an ordinary result or error.
@@ -129,8 +129,10 @@ The program and the library need only files that are part of Windows. The WebAss
     and 300 sums of different dimensions were all refused before running.
   - The test and its reference were written by the author of Kilat. Before the run, the harness was
     shown to catch a planted crash and a planted hang.
-- The release download: `kilat.exe` fetched from the 0.2.0 release page has the same SHA-256 as the
-  local build, the zip holds the same program, and the five examples print the same lines.
+- Fuel stop location (`python tests/fuel_location_test.py`): 4 of 4.
+- The release download check was last run for 0.2.0: `kilat.exe` fetched from that release page had
+  the same SHA-256 as the build it came from, the zip held the same program, and the five examples
+  printed the same lines.
 
 ## New in 0.2
 
@@ -147,6 +149,9 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
 ```
 
 - The web engine can run in a Web Worker (`{ worker: true }`).
+- 0.2.1: a fuel stop now names the line that was running. In 0.2.0 it could name a library
+  function instead (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop).
+  The fuzz test found this; `python tests/fuel_location_test.py` now checks four cases.
 - GlowCode, a Glow page where a person or a model writes Kilat and the checker refuses a wrong
   program before it runs. It is an open pull request, not merged yet:
   https://github.com/juw12/projects/pull/53
@@ -170,9 +175,6 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
   highest level until the program ends, and the command-line program does not free memory on exit.
   `unsafe` Rust is confined to two files, `src/alloc.rs` and `src/ffi.rs`.
 - The memory limit is an estimate. It does not count the saved hash of each text.
-- Known fault, found by the fuzz test and not fixed yet: when a program runs out of fuel, the message
-  can name the wrong place (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop).
-  The program is still stopped correctly; only the reported location is wrong.
 - The bug set, the fuzz test and its reference were all written by the author. Nobody else has written
   a bug set for Kilat or repeated these measurements on another PC.
 - GlowCode was tested in headless Edge with a stand-in for the model: 17 of 17 page actions in two runs.

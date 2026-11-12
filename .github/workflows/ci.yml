@@ -1,0 +1,62 @@
+name: ci
+
+# Builds Kilat on GitHub's machines and reruns the checks the README quotes.
+# This is a rerun on other machines, not a review by another person.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add wasm32-unknown-unknown
+
+      - name: mypy (for the bug table)
+        run: python -m pip install mypy
+
+      - name: Build
+        run: python build.py native wasm
+
+      - name: Checks and measurements (judge.py --quick)
+        run: python judge.py --quick
+
+      - name: Fuel stop names the right line
+        run: python tests/fuel_location_test.py
+
+      - name: Fuzz and differential tests
+        run: python tests/fuzz_test.py --out fuzz_summary.json
+
+      - name: Summary
+        if: always()
+        run: python tests/ci_report.py
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-${{ matrix.os }}
+          path: |
+            judge_report.json
+            RESULTS.md
+            fuzz_summary.json
