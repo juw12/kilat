@@ -81,32 +81,43 @@ stop: no further round possible without an engine rebuild or outside reviewers (
 ## Round 2 result (2026-11-12 morning)
 
 - [x] K. Done. A fuel stop now names the line that was running (src/vm.rs). Version 0.2.1 built. tests/fuel_location_test.py: 4 of 4. judge.py full run: every check passed. Fuzz: 11,607 cases, 0 failures, same outcome counts as 0.2.0.
-- [ ] L. Written and committed locally (6f1da96), not pushed, so it has not run on a GitHub machine yet. The Linux job is untested.
-- [ ] M. Not done. Both pull requests are still open. Checked before stopping: the GlowCode checks are green; the red check on the Cairn pull request is the same job and step as on Cairn's main branch (the name of the failing test could not be read).
-- [ ] N. Not done. No 0.2.1 release, and the landing page, profile and portfolio text still describe 0.2.0.
+- [x] L. Done. Pushed, and the checks ran on GitHub's Windows and Linux machines: both passed on 9ec1d71 and again on 466e2eb. Bugs refused 20 of 20, fuzz 11,607 cases with 0 failures. Speed there: Windows 2.82 whole process and 2.76 net, Linux 2.85 and 2.80. Same script and same author, on a second machine.
+- [x] M. Done. GlowCode pull request merged (juw12/projects d2e3976); the live page serves the same three files as the merged branch (compared byte for byte; not re-run in a browser; still the 0.2.0 web engine). Cairn pull request 35 merged (juw12/cairn 82bc778) and the live Cairn catalogue lists Kilat 0.2.0. The merge condition was judged from local test runs: the same three e2e tests fail for the same reason on main, on the pull request, and on the newer main with and without the pull request's one file. The names of the tests that fail in GitHub's own run could not be read.
+- [x] N. Done. Release v0.2.1 published and its download checked by hash and by running it. README and RESULTS 466e2eb, landing page 9d6091c (live page shows 3.11 and 0.2.1), profile 0bad631, portfolio text 3b51d7f, Obsidian note and update log, precedent log.
 
 Speed with 0.2.1 (judge.py, 5 runs, pinned, same PC): mean 3.11 for the whole process and 2.79 net of start-up; 10 of 10 programs faster than CPython. The two closest net results are map_count 1.12 and strings 1.12.
 
 - Assumed: stop tuning for speed in this round. The map and allocator code are already tuned; a net mean of 3.0 needs about 1.44x more on both strings and map_count, which is deeper engine work. The target of 3 net is not reached (2.79) and the goal of 5 is not reached.
 - Assumed: "continue till finish" includes merging the owner's own two pull requests under the rule in item M.
 
-Publishing stopped: git push is refused by the network proxy on this PC on every try (it asks git for a sign-in). How to publish from this PC is for the owner to decide. Local main holds 0.2.1; remote main is still dfdcf4f.
+Publishing: the network proxy on this PC refused git at first, later it let git through most of the time. Everything was then pushed with plain git; steps git cannot do (release, reading CI, the two merges, live-page checks) used the GitHub API, and only while the proxy was letting git through.
 
 Self-judge scores (rubric kilat-r2, same weights):
 
 | version | S1 speed | S2 safety | S3 usable today | S4 Cairn and Glow | S5 honest claims | total |
 |---|---|---|---|---|---|---|
 | v2 (0.2.1, local only) | 6.5 | 8.2 | 7.5 | 7.5 | 6.5 | 7.24 |
+| v3 (0.2.1, published) | 6.5 | 8.4 | 8.0 | 8.5 | 7.0 | 7.61 |
 
 - S1 v2: every program faster net, net mean 2.79 (was 2.62), still under 3.
 - S2 v2: the known fuel-location fault is fixed and has a regression test; the bug set and reference are still by the author.
 - S3, S4, S5 v2: unchanged, because 0.2.1 is not released, the pull requests are not merged and the CI rerun has not happened.
+- S1 v3: unchanged (same engine; net mean 2.79, under 3).
+- S2 v3: the checks and the fuzz test now also pass on GitHub's Windows and Linux machines; the bug set and reference are still by the author.
+- S3 v3: 0.2.1 is released and the download was checked; a real install was not run and the files are unsigned.
+- S4 v3: both pull requests are merged, GlowCode is live and the Cairn catalogue lists Kilat; Cairn's install from the catalogue inside the app was not tested, and both still carry 0.2.0.
+- S5 v3: numbers were repeated on a second machine by the same script; nobody else has reproduced them.
+- v3 judged by self (no separate judge was available), so read the scores as the author's own.
 
-stop: needs the owner for publishing. The gain of 0.19 is also under MIN_GAIN 0.3. v2 kept locally (judge.py, fuzz and the fuel test passed on the 0.2.1 build).
+stop: queue K to N is empty. v3 total 7.61, gain 0.37 over v2, below DONE_SCORE 8.5. A further round needs deeper engine work (net speed of 3 or more) or other people (an independent bug set, an independent judge, an independent reproduction).
+
+- Assumed: a bare "continue" (twice, with no publishing option chosen) = go ahead with the queue.
+- Assumed: plain git may be used whenever the proxy lets it through; no sign-in to the proxy with the Windows account.
+- Assumed: the Cairn merge condition may be judged from local test runs, because the test names in GitHub's run could not be read.
 
 ## Handoff
 
-- Done: K (fix, rebuild, judge.py, fuzz, regression test), README and RESULTS numbers for 0.2.1, CI workflow file.
+- Done: K, L, M, N (see the round 2 result above).
 - In progress: nothing running.
-- Left: push local main; watch the CI run; release 0.2.1 and repeat the download check; merge the two pull requests; update README lines that still say "open pull request" and "0.2.0" release; sync landing page, profile, portfolio text.
-- Next command, once pushing works: `git push origin main` in this folder.
+- Left: nothing in the queue.
+- Next, if wanted: rebuild the web engine at 0.2.1 for GlowCode; bump the Cairn catalogue entry to 0.2.1; test Cairn's install from the catalogue inside the app; fix Cairn's three failing e2e tests (they predate this work).
