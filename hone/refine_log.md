@@ -208,9 +208,63 @@ Findings:
 
 Still not verified: the owner's own installed Cairn with his real brain (the window was hidden, so nothing was judged by eye). No single clean run of all tests on 3.13: the GitHub run uses the latest Python only, and the local 3.13 run needed the rerun of 10. The test count was not read from the GitHub logs this round, only the step results. Models were tried on 4 tasks, once each; that does not show how often they get Kilat right.
 
-## Handoff
+## Handoff (round 5, closed)
 
 - Done: round 5 (see above).
 - In progress: nothing running.
 - Left: nothing in the queue.
 - Next, if wanted: install Kilat once by hand in the installed Cairn (Plugins, turn on community plugins, Install Kilat; about 30 s); add `"3.13"` to Cairn's test matrix (one line) so the stated minimum is tested.
+
+## Round 6 (2026-11-12 night)
+
+- [x] A. Cairn CI on main after merging PR 39 (`d4b7a12`): run 43213453052 finished "success". Both jobs: 362 tests, OK (skipped=2), on CPython 3.13.18 and 3.15.2.
+- [x] B. Test count read from the job logs of PR 39: 362 tests on all four jobs.
+- [x] C. Model reliability sample on the live GlowCode page: 10 engineering tasks x 3 repeats, run twice.
+- [ ] D. Install Kilat in my own installed Cairn: NOT done. Cairn was open in the foreground (with a live opencode child) from 12:24 to at least 12:45 UTC, so a restart would have interrupted me. Nothing in the app, its settings or the vault was changed. Only a local forwarder was started and stopped again; the launcher was never started.
+- [ ] A clean full-suite run on Windows Python 3.13.2 was not redone (CI on 3.13.18 covers Linux only).
+
+### Findings
+
+Sample numbers (free models gpt-oss-20b and Llama-3.3-70B, Kilat 0.2.1):
+
+| Run | Gap between runs | Correct | Ran but wrong | Refused by checker | No model answered |
+|---|---|---|---|---|---|
+| fast | 4 s | 16 | 7 | 1 | 6 |
+| spaced | 45 s | 24 | 1 | 5 | 0 |
+
+- Spaced run: 24 of 30 correct, all 24 on the first try. 8 of 10 tasks were 3 of 3.
+- Two tasks failed every time in the spaced run: shaft torque (0 of 3) and spring (0 of 3).
+- Only 1 of 30 printed a wrong number (shaft torque: 471.7 instead of 49.39). The other 5 failures were refused by the checker, so no wrong answer was shown.
+- The "no model answered" cases in the fast run were provider rate limits (HTTP 402 / 429) caused by my 4 s cadence, not Kilat.
+- The round-5 "4 of 4" does not hold on a larger sample. Honest figure: 24 of 30 on the better run.
+
+Three Kilat usability defects (real, not checker artefacts):
+
+1. `rpm` is silently an angular speed. Every model wrote `rpm * 2 * pi / 60`, converting twice. Result: unit mismatch (refused) or a number off by 60/(2 pi) = 9.55 (accepted once, because radians have no dimension).
+2. `expr in J` appears to give a bare number, so a later `{energy:J.3}` is refused ("cannot show Float as J"). The models reach for `in <unit>` naturally.
+3. A placeholder with no unit (`{x}` or `{x:.2}`) prints base SI plus its own unit label. Models then add the unit they meant: "0.0024 m mm", "3000.00 s min", "96 N N".
+
+### Assumptions
+
+- A small sample (30 runs, two free models) is an indication, not a proof.
+- Stopping D while Cairn is in use is the right call; the install is three clicks for me, or one automated pass when Cairn sits in the tray.
+
+### Still not verified
+
+- Kilat is not installed in my own Cairn (catalogue entry and separate-copy install were verified in round 5).
+- Block rendering inside my real notes.
+- Full test suite on Windows Python 3.13.2.
+- Speed goals unchanged: 3.11x CPython whole process, 2.79x net of start-up (3x net and 5x not reached). Hone score 7.61 self-judged, below 8.5.
+
+## Handoff
+
+Next queue, in order:
+
+1. Kilat 0.2.2 (kilat repo, GlowCode web engine in juw12/projects, Cairn catalogue):
+   - `rpm`: checker hint when an rpm value is multiplied by `2 * pi / 60`, and a line in the GlowCode model prompt ("rpm is already an angular speed; torque = power / speed").
+   - `in <unit>`: let `{x:J.3}` show a value made by `x in J`, or refuse `in` there with the hint "drop `in J`; `{energy:J.3}` converts for you".
+   - Placeholder without a unit directly followed by a unit word: refuse with the hint "write `{x:mm.2}`".
+   - Rerun `judge_work/model_sample_round6.py` with `KILAT_SAMPLE_PAUSE=45`. Target: shaft torque and spring 3 of 3, no wrong number printed.
+2. Install Kilat in my own Cairn when it is in the tray (scripts ready: `judge_work/cairn_flagged_launcher.py`, `judge_work/cairn_d_forwarder.py`), or by hand: Plugins -> turn on community plugins -> Install on the Kilat card.
+3. Full test suite on Windows Python 3.13.2.
+4. Speed (3x net, 5x) and hone score to 8.5 with an outside judge.
