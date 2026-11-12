@@ -178,9 +178,39 @@ Findings:
 
 Still not verified: a real model answering in GlowCode over the internet; the live pages in a real browser session; the Cairn app window itself and the installed app (only its server code was run).
 
-## Handoff
+## Handoff (round 4, closed)
 
 - Done: round 4 (see above).
 - In progress: nothing running.
 - Left: nothing in the queue.
 - Next, if wanted: open GlowCode and the Cairn app once by hand; decide whether Cairn's stated minimum Python should move up from 3.10.
+
+## Round 5 (2026-11-12 evening)
+
+Asked: finish the "not verified" items and the optional follow-up. The owner decided: Windows only, and use the latest Python. No new judging; the hone score stays at 7.61 (self-judged, below 8.5). Kilat itself is unchanged at 0.2.1.
+
+- [x] Cairn's stated minimum Python is now 3.13, in juw12/cairn pull request 38 (https://github.com/juw12/cairn/pull/38), merged as d1e8d87. Three files, 8 lines: `pyproject.toml` says `>=3.13`, `README.md` says "Python 3.13+", `docs/install.ps1` checks for and installs 3.13. The GitHub run was green on the pull request (5129187) and again on main after the merge (https://github.com/juw12/cairn/actions/runs/43210093956). Local run of all tests on Python 3.13.2: 362 tests, 352 passed, 10 errors, 0 failures, in 1311 s. All 10 errors were browser wait timeouts while my other browser jobs ran on the same PC. Those 10 run again on their own: 10 of 10 in 111 s.
+- [x] Live pages in a real browser. Edge 157 headless against the live addresses, 14 of 14 and 14 of 14. GlowCode says "Kilat 0.2.1 is ready", its five examples behave, and a typed program gives 4.00 MPa for 1.2 kN on 20 mm x 15 mm. The Cairn catalogue lists Kilat 0.2.1. The playground at https://juw12.github.io/kilat/ runs engine 0.2.1, gives 20.7 MPa, refuses the unit mistake, and a typed program gives 49.4 N*m. The live Cairn web app installs Kilat 0.2.1 with one real download.
+- [x] A real model answering in GlowCode over the internet: 4 of 4 tasks answered, passed the checker and ran. Rod stress 53.1 MPa (Meta-Llama-3_3-70B-Instruct, first try). Resistor 25.5 mA and 306.4 mW (mistral-Nemo-Instruct-2407, first try). Box volume 9.00 L (Meta-Llama-3_3-70B-Instruct, second try; the checker refused the first answer). Shaft torque 49.4 N*m (codestral-latest, first try).
+- [x] Kilat inside Cairn's real window engine (pywebview with WebView2): 23 of 23. A separate copy of the app at main f0f7c42 ran on a temporary brain with the window hidden. Community plugins were off at first; Install showed the "Install Kilat?" dialog; the app stored Kilat 0.2.1 from juw12/kilat after one download. A kilat block in a note gave 20.8 MPa for 250 N on 4 mm x 3 mm. Adding metres to kilograms was refused with "unit mismatch: cannot add m and kg". The note was saved to a real file, a reload kept the install with no second download, and the console showed no errors.
+
+Findings:
+
+- The model providers were unreliable: three "payment required" replies, one "too many requests" and two aborted requests. The page moved on to another provider each time.
+- The first live-page run failed its playground and Cairn stages because of my own wrong page selectors. Fixed and rerun; the numbers above are from the reruns.
+- The window check took four attempts. The first was stopped by my own safety guard (the same folder written in short and long form). The second failed to start because of my own variable mix-up. The third passed 8 checks and then stopped because Cairn's first-run tour covered the page. The fourth closes the tour with its own "Skip tour" button.
+- The owner's real settings files were not changed by the window check. The temporary folder and the extra copy of the app were removed afterwards.
+- The installed Cairn updates itself from main. Because `pyproject.toml` changed, it will restart itself once on its next update pass.
+
+- Assumed: 3.13 is the right minimum. It is the version on the owner's PC, and the owner said to use the latest Python.
+- Assumed: the browser may reach the live addresses through a small local forwarder that carries no sign-in, so nothing signs in to the network proxy with the Windows account.
+- Assumed: a separate copy of the app on a temporary brain stands in for the installed app, so the owner's notes and settings stay untouched.
+
+Still not verified: the owner's own installed Cairn with his real brain (the window was hidden, so nothing was judged by eye). No single clean run of all tests on 3.13: the GitHub run uses the latest Python only, and the local 3.13 run needed the rerun of 10. The test count was not read from the GitHub logs this round, only the step results. Models were tried on 4 tasks, once each; that does not show how often they get Kilat right.
+
+## Handoff
+
+- Done: round 5 (see above).
+- In progress: nothing running.
+- Left: nothing in the queue.
+- Next, if wanted: install Kilat once by hand in the installed Cairn (Plugins, turn on community plugins, Install Kilat; about 30 s); add `"3.13"` to Cairn's test matrix (one line) so the stated minimum is tested.
