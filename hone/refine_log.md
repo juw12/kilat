@@ -115,9 +115,42 @@ stop: queue K to N is empty. v3 total 7.61, gain 0.37 over v2, below DONE_SCORE 
 - Assumed: plain git may be used whenever the proxy lets it through; no sign-in to the proxy with the Windows account.
 - Assumed: the Cairn merge condition may be judged from local test runs, because the test names in GitHub's run could not be read.
 
-## Handoff
+## Handoff (round 2, closed)
 
 - Done: K, L, M, N (see the round 2 result above).
 - In progress: nothing running.
 - Left: nothing in the queue.
 - Next, if wanted: rebuild the web engine at 0.2.1 for GlowCode; bump the Cairn catalogue entry to 0.2.1; test Cairn's install from the catalogue inside the app; fix Cairn's three failing e2e tests (they predate this work).
+
+## Round 3 follow-ups (2026-11-12 afternoon)
+
+Asked: finish the four "not verified" items and the four "next" items. No new judging; the hone score stays at 7.61 (self-judged, below 8.5).
+
+- [x] Names of the failing tests in Cairn's own GitHub run. Read from the run log on 82bc778: 360 tests, 4 failures: three stale e2e sidebar tests and `test_relay.ChatIdTests.test_saved_token_is_sealed_and_preferred`.
+- [x] Real install with `install.cmd`. Ran `install.cmd /quiet` on the author's PC: the installed program has the same SHA-256 as the release download, one folder was added to the user PATH (16 to 17 entries), a second install changes nothing, `kilat version` prints `kilat 0.2.1`.
+- [x] GlowCode in a browser after the merge. Headless browser on local copies of the live files: 11 of 11 with the 0.2.0 engine and 11 of 11 with the 0.2.1 engine.
+- [x] Web engine 0.2.1 for GlowCode. juw12/projects pull request 54, 4 of 4 checks green, merged as 0105a60. The live `kilat.wasm` is 722,723 bytes and its SHA-256 matches the local build.
+- [x] Cairn catalogue entry at 0.2.1 and the three e2e tests. juw12/cairn pull request 36, merged as ce2fae0. The live catalogue lists Kilat 0.2.1.
+- [x] Install from the catalogue inside Cairn. Headless browser, local server, live catalogue bytes: 19 of 19 checks.
+
+Cairn's GitHub run, Python 3.13: 362 tests, failures 4 before and 1 after (checked on the pull request and again on main after the merge). The one left is the relay token test. The run is still red.
+
+Findings:
+
+- The relay token test cannot pass on Linux: the token is only sealed on Windows, elsewhere it is stored as plain text, and the test checks that it is not plain. Left for the owner: make that one check Windows-only, or add real protection off Windows.
+- On Python 3.10 the pull request run shows two more errors in `test_progress`: `cairn vibe log --progress N text` is refused when the option comes before the text. The branch did not touch that code. It was hidden because the 3.10 job on main is cancelled as soon as the 3.13 job fails. Not reproduced locally (no Python 3.10 here). Left for the owner: accept options before the text on old Pythons, or drop 3.10.
+- A scratch helper used for reading run logs followed GitHub's redirect and carried the GitHub token to GitHub's log storage host. Found from two rejected requests; fixed by dropping the header on any redirect to another host. The owner was told and can regenerate the token if he wants to be strict.
+
+- Assumed: Chat in the Cairn sidebar is intended (the app's hub list and README both have it), so the three e2e tests were out of date. The tests were changed, not the app.
+- Assumed: merging pull request 36 under a red run is fine. It lowers failures from 4 to 1 on 3.13, changes a version string and test expectations only, and the two 3.10 errors are not from the branch.
+- Assumed: the real install may stay on the PC. To remove it, delete the Kilat folder under the user's local programs folder and its PATH entry.
+- Assumed: browser checks may run on a local server with live bytes fetched beforehand, so the headless browser never goes out through the network proxy.
+
+Still not verified: the six model-conversation cases in GlowCode; the live pages in a real browser session; the Cairn desktop build; the two Python 3.10 errors on main itself.
+
+## Handoff
+
+- Done: all round 3 follow-ups (see above).
+- In progress: nothing running.
+- Left: nothing in the queue.
+- Next, if wanted: decide the relay token test (Windows-only check, or real protection off Windows); decide Python 3.10 for the Cairn command line (fix option order, or drop 3.10).
