@@ -292,12 +292,20 @@ fn round_to(x: f64, n: i64) -> f64 {
     fixed(x, n as usize).parse().unwrap_or(x)
 }
 
-fn to_int(x: f64) -> Result<Value, Trap> {
+/// The message for a Float that has no Int: kept out of line so that `to_int` stays small.
+#[cold]
+#[inline(never)]
+fn not_an_int(x: f64) -> Trap {
     if !x.is_finite() {
-        return err(format!("{} cannot be turned into an Int", show_float(x)));
+        return Trap::Error(format!("{} cannot be turned into an Int", show_float(x)));
     }
-    if x >= 9_223_372_036_854_775_808.0 || x < -9_223_372_036_854_775_808.0 {
-        return err(format!("{} is too large for an Int", show_float(x)));
+    Trap::Error(format!("{} is too large for an Int", show_float(x)))
+}
+
+#[inline]
+fn to_int(x: f64) -> Result<Value, Trap> {
+    if !x.is_finite() || x >= 9_223_372_036_854_775_808.0 || x < -9_223_372_036_854_775_808.0 {
+        return Err(not_an_int(x));
     }
     Ok(Value::Int(x as i64))
 }
@@ -1223,9 +1231,10 @@ fn constant_time(b: B) -> bool {
     )
 }
 
+/// Run a builtin. The ones that tight loops call most are answered here, in a small
+/// function; everything else goes on to `call_rest`.
 pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
     let Some(&b) = ALL.get(id as usize) else { return Err(bad()) };
-    let name = BUILTINS[id as usize].0;
     let arg = |i: usize| args.get(i).copied().ok_or_else(bad);
     let num = |i: usize| float(args.get(i).copied().ok_or_else(bad)?);
     if !constant_time(b) {
@@ -1238,7 +1247,6 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
         }
     }
     match b {
-        // ---- math
         B::Abs => match arg(0)? {
             Value::Int(i) => Ok(Value::Int(i.checked_abs().ok_or_else(overflow)?)),
             Value::Float(f) => fl(f.abs()),
@@ -1252,6 +1260,40 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
             let (x, y) = (arg(0)?, arg(1)?);
             Ok(if less(&core.heap, x, y)? { y } else { x })
         }
+        B::Floor => to_int(num(0)?.floor()),
+        B::Ceil => to_int(num(0)?.ceil()),
+        B::Round => to_int(num(0)?.round()),
+        B::Trunc | B::ToInt => to_int(num(0)?.trunc()),
+        B::ToFloat => fl(num(0)?),
+        B::IsNan => Ok(Value::Bool(num(0)?.is_nan())),
+        B::Approx => Ok(Value::Bool((num(0)? - num(1)?).abs() <= num(2)?.abs())),
+        B::StartsWith => {
+            let heap = &core.heap;
+            Ok(Value::Bool(heap.str_of(arg(0)?)?.starts_with(heap.str_of(arg(1)?)?)))
+        }
+        B::EndsWith => {
+            let heap = &core.heap;
+            Ok(Value::Bool(heap.str_of(arg(0)?)?.ends_with(heap.str_of(arg(1)?)?)))
+        }
+        B::GetOr => Ok(core.heap.map_get(arg(0)?, arg(1)?)?.unwrap_or(arg(2)?)),
+        B::Has => Ok(Value::Bool(core.heap.map_get(arg(0)?, arg(1)?)?.is_some())),
+        _ => call_rest(core, id, b, args),
+    }
+}
+
+/// Every builtin that `call` does not answer itself. The work of looking at whole
+/// arguments has already been counted by `call`.
+#[inline(never)]
+fn call_rest(core: &mut Core, id: u16, b: B, args: &[Value]) -> Result<Value, Trap> {
+    let name = BUILTINS[id as usize].0;
+    let arg = |i: usize| args.get(i).copied().ok_or_else(bad);
+    let num = |i: usize| float(args.get(i).copied().ok_or_else(bad)?);
+    match b {
+        // ---- answered by `call`
+        B::Abs | B::Min2 | B::Max2 | B::Floor | B::Ceil | B::Round | B::Trunc | B::ToInt => Err(bad()),
+        B::ToFloat | B::IsNan | B::Approx | B::StartsWith | B::EndsWith | B::GetOr | B::Has => Err(bad()),
+
+        // ---- math
         B::MinL | B::MaxL => {
             let heap = &core.heap;
             let items = heap.list_of(arg(0)?)?;
@@ -1279,10 +1321,6 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
                 x
             })
         }
-        B::Floor => to_int(num(0)?.floor()),
-        B::Ceil => to_int(num(0)?.ceil()),
-        B::Round => to_int(num(0)?.round()),
-        B::Trunc | B::ToInt => to_int(num(0)?.trunc()),
         B::RoundTo => fl(round_to(num(0)?, int(arg(1)?)?)),
         B::Sin => fl(num(0)?.sin()),
         B::Cos => fl(num(0)?.cos()),
@@ -1308,9 +1346,6 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
             })
         }
         B::Atan2 => fl(num(0)?.atan2(num(1)?)),
-        B::ToFloat => fl(num(0)?),
-        B::IsNan => Ok(Value::Bool(num(0)?.is_nan())),
-        B::Approx => Ok(Value::Bool((num(0)? - num(1)?).abs() <= num(2)?.abs())),
         B::Rand => fl((next_u64(&mut core.rng) >> 11) as f64 / 9_007_199_254_740_992.0),
         B::RandInt => Ok(Value::Int(rand_int(&mut core.rng, int(arg(0)?)?, int(arg(1)?)?)?)),
         B::RandSeed => {
@@ -1397,14 +1432,6 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
         B::ContainsS => {
             let heap = &core.heap;
             Ok(Value::Bool(heap.str_of(arg(0)?)?.contains(heap.str_of(arg(1)?)?)))
-        }
-        B::StartsWith => {
-            let heap = &core.heap;
-            Ok(Value::Bool(heap.str_of(arg(0)?)?.starts_with(heap.str_of(arg(1)?)?)))
-        }
-        B::EndsWith => {
-            let heap = &core.heap;
-            Ok(Value::Bool(heap.str_of(arg(0)?)?.ends_with(heap.str_of(arg(1)?)?)))
         }
         B::Replace => {
             let heap = &core.heap;
@@ -1597,8 +1624,6 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
             let v = core.heap.map_get(arg(0)?, arg(1)?)?;
             option(&mut core.heap, v)
         }
-        B::GetOr => Ok(core.heap.map_get(arg(0)?, arg(1)?)?.unwrap_or(arg(2)?)),
-        B::Has => Ok(Value::Bool(core.heap.map_get(arg(0)?, arg(1)?)?.is_some())),
         B::RemoveM => {
             core.heap.check(48)?;
             let v = core.heap.map_remove(arg(0)?, arg(1)?)?;
