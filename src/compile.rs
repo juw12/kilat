@@ -45,11 +45,21 @@ pub enum Op {
     NewList { a: u8, n: u8 }, NewStruct { a: u8, n: u8, ty: u16 }, NewEnum { a: u8, n: u8, variant: u16 }, NewMap { a: u8, n: u8 },
     GetField { a: u8, b: u8, idx: u16 }, SetField { a: u8, b: u8, idx: u16 },
     ListGet { a: u8, b: u8, c: u8 }, ListSet { a: u8, b: u8, c: u8 }, MapGet { a: u8, b: u8, c: u8 }, MapSet { a: u8, b: u8, c: u8 },
+    /// `a = b[c]` if the map `b` has the key `c`, else `a = d`
+    MapGetOr { a: u8, b: u8, c: u8, d: u8 },
     StrIndex { a: u8, b: u8, c: u8 }, Push { a: u8, b: u8 }, Len { a: u8, b: u8 }, Concat { a: u8, b: u8, c: u8 }, StrCat { a: u8, n: u8 },
     Host { a: u8 }, Trap { code: u8 },
 }
 
 const _: () = assert!(std::mem::size_of::<Op>() == 8);
+
+/// A variable read or a literal: evaluating it cannot reassign a variable.
+fn inert(e: &TExpr) -> bool {
+    matches!(
+        e.kind,
+        TKind::Local(_) | TKind::Top(_) | TKind::Unit | TKind::Bool(_) | TKind::Int(_) | TKind::Float(_) | TKind::Str(_)
+    )
+}
 
 /// `ty` of a `NewStruct` that builds a tuple.
 pub const TUPLE: u16 = u16::MAX;
@@ -356,6 +366,13 @@ impl<'a> Compiler<'a> {
         r
     }
 
+    /// Evaluate into a new temporary, so that the value is a private copy.
+    fn temp(&mut self, e: &TExpr) -> u8 {
+        let r = self.alloc();
+        self.expr_to(e, r, true);
+        r
+    }
+
     /// Evaluate `e` into `dst`. `fresh` means no live variable is stored in `dst`.
     fn expr_to(&mut self, e: &TExpr, dst: u8, fresh: bool) {
         self.set_pos(e.pos);
@@ -597,6 +614,15 @@ impl<'a> Compiler<'a> {
             if id == B::ToFloat as u16 {
                 return one(|a, b| Op::IntToFloat { a, b }, self);
             }
+        }
+        if args.len() == 3 && id == B::GetOr as u16 {
+            // Arguments are evaluated in order. An earlier one may stay in its variable's own
+            // register only if no later one can reassign that variable; otherwise it is copied.
+            let b = if inert(&args[1]) && inert(&args[2]) { self.any(&args[0]) } else { self.temp(&args[0]) };
+            let c = if inert(&args[2]) { self.any(&args[1]) } else { self.temp(&args[1]) };
+            let d = self.any(&args[2]);
+            self.emit(Op::MapGetOr { a: dst, b, c, d });
+            return;
         }
         let refs: Vec<&TExpr> = args.iter().collect();
         let (base, saved) = self.seq_regs(&refs, dst, fresh);

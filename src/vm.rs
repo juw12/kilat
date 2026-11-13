@@ -747,6 +747,13 @@ impl Vm {
                     Some(v) => r!(a) = v,
                     None => break 'run Err(natives::missing_key(core, r!(c))),
                 },
+                Op::MapGetOr { a, b, c, d } => {
+                    let fallback = r!(d);
+                    r!(a) = match tri!(core.heap.map_get(r!(b), r!(c))) {
+                        Some(v) => v,
+                        None => fallback,
+                    };
+                }
                 Op::MapSet { a, b, c } => {
                     tri!(core.heap.map_set(r!(a), r!(b), r!(c)));
                     allocated!();
