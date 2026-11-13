@@ -121,12 +121,15 @@ impl Checker {
             ExprKind::Str(s) => (te(TKind::Str(s.clone()), pos), Ty::Str),
             ExprKind::Interp(parts) => {
                 let mut out = Vec::new();
-                for part in parts {
+                for (i, part) in parts.iter().enumerate() {
                     match part {
                         InterpPart::Lit(s) => out.push(te(TKind::Str(s.clone()), pos)),
                         InterpPart::Expr(inner, spec) => {
                             let (v, vty) = self.expr(inner, &Expect::Infer);
-                            self.display(v, &vty, spec.as_deref(), inner.pos, &mut out);
+                            let own_unit = self.display(v, &vty, spec.as_deref(), inner.pos, &mut out);
+                            if let (true, Some(InterpPart::Lit(after))) = (own_unit, parts.get(i + 1)) {
+                                self.unit_word_after(inner, spec.as_deref(), after);
+                            }
                         }
                     }
                 }
@@ -156,8 +159,18 @@ impl Checker {
                 (te(TKind::Or(bx(l), bx(r)), pos), Ty::Bool)
             }
             ExprKind::Binary(op, l, r) => {
+                let product = matches!(op, BinOp::Mul | BinOp::Div);
+                if product && self.product_child != e as *const Expr as usize {
+                    self.rpm_twice(e);
+                }
+                if product {
+                    self.product_child = &**l as *const Expr as usize;
+                }
                 let (lv, lt) = self.expr(l, &Expect::Infer);
                 let before = self.assigns;
+                if product {
+                    self.product_child = &**r as *const Expr as usize;
+                }
                 let (rv, rt) = self.expr(r, &Expect::Infer);
                 let lv = self.keep(lv, before);
                 self.bin_typed(*op, lv, &lt, rv, &rt, pos)
@@ -1431,7 +1444,7 @@ impl Checker {
     // ---- text
 
     /// Push the parts that show `v` as text (used by `print`, `str` and `"{...}"`).
-    pub(crate) fn display(&mut self, v: TExpr, ty: &Ty, spec: Option<&str>, pos: Pos, out: &mut Vec<TExpr>) {
+    pub(crate) fn display(&mut self, v: TExpr, ty: &Ty, spec: Option<&str>, pos: Pos, out: &mut Vec<TExpr>) -> bool {
         let (mut align, mut width, mut prec) = (0i64, -1i64, -1i64);
         let mut unit_text = String::new();
         if let Some(raw) = spec {
@@ -1455,7 +1468,7 @@ impl Checker {
                     rest = &rest[..dot];
                 } else {
                     self.err_hint(pos, format!("cannot read the format `{}`", raw), FORMAT_HELP);
-                    return;
+                    return false;
                 }
             }
             unit_text = rest.trim().to_string();
@@ -1465,37 +1478,150 @@ impl Checker {
                 Ok(u) => u,
                 Err(_) => {
                     self.err_hint(pos, format!("cannot read the format `{}`", spec.unwrap_or("")), FORMAT_HELP);
-                    return;
+                    return false;
                 }
             };
             let (dim, num, den) = match self.unit_def(&ue, false) {
                 Some(x) => x,
-                None => return,
+                None => return false,
             };
             let v = match self.resolve(ty) {
                 Ty::Num(d) if d == dim => v,
                 Ty::Int if dim.is_none() => Self::to_float(v),
-                Ty::Error => return,
+                Ty::Error => return false,
                 other => {
                     let msg = format!("unit mismatch: cannot show {} as {}", self.show(&other), unit_text);
-                    self.err(pos, msg);
-                    return;
+                    if other == Ty::Int || other.is_float() {
+                        let digits = if prec >= 0 { format!(":.{}", prec) } else { String::new() };
+                        let hint = format!(
+                            "this value is a plain number without a unit (`x in {u}` gives a plain number); \
+                             keep the unit on the value by removing `in {u}` where it is made, \
+                             or put the unit after the braces: `{{value{d}}} {u}`",
+                            u = unit_text,
+                            d = digits
+                        );
+                        self.err_hint(pos, msg, hint);
+                    } else {
+                        self.err(pos, msg);
+                    }
+                    return false;
                 }
             };
             out.push(fmt_call(scale(v, den, num), width, prec, align, pos));
             out.push(te(TKind::Str(format!(" {}", unit_text)), pos));
-            return;
+            return false;
         }
+        let mut own_unit = false;
         match self.resolve(ty) {
             Ty::Str if width < 0 && prec < 0 => out.push(v),
             Ty::Num(d) if !d.is_none() => {
                 let name = dim_name(&d, &self.bases);
                 out.push(fmt_call(v, width, prec, align, pos));
                 out.push(te(TKind::Str(format!(" {}", name)), pos));
+                own_unit = true;
             }
             Ty::Unit => self.err(pos, "this expression gives no value to show"),
             Ty::Error => {}
             _ => out.push(fmt_call(v, width, prec, align, pos)),
+        }
+        own_unit
+    }
+
+    /// `"{force} N"` would print two units ("96 N N"): the placeholder already prints one.
+    fn unit_word_after(&mut self, inner: &Expr, spec: Option<&str>, after: &str) {
+        let rest = after.strip_prefix(' ').unwrap_or(after);
+        let word: String = rest.chars().take_while(|c| c.is_alphabetic()).collect();
+        let joined = matches!(rest[word.len()..].chars().next(), Some(c) if c.is_alphanumeric() || c == '_');
+        if word.is_empty() || joined || !self.units.contains_key(&word) {
+            return;
+        }
+        let name = match &inner.kind {
+            ExprKind::Ident(n) => n.as_str(),
+            _ => "value",
+        };
+        let digits = match spec.map(str::trim) {
+            Some(s) => s.rfind('.').map(|dot| &s[dot..]).unwrap_or(""),
+            None => "",
+        };
+        self.err_hint(
+            inner.pos,
+            format!("this placeholder already prints a unit, so the `{}` after it would be a second unit", word),
+            format!("put the unit inside the braces and delete the one after them: `{{{}:{}{}}}`", name, word, digits),
+        );
+    }
+
+    /// `speed * 2 * pi / 60` where `speed` already has a unit: a speed written with `rpm`
+    /// is stored as an angular speed, so the rpm to rad/s factor would be applied twice.
+    fn rpm_twice(&mut self, e: &Expr) {
+        let (mut over, mut under): (Vec<&Expr>, Vec<&Expr>) = (Vec::new(), Vec::new());
+        let mut todo: Vec<(&Expr, bool)> = vec![(e, false)];
+        while let Some((x, flipped)) = todo.pop() {
+            match &x.kind {
+                ExprKind::Binary(BinOp::Mul, l, r) => {
+                    todo.push((l, flipped));
+                    todo.push((r, flipped));
+                }
+                ExprKind::Binary(BinOp::Div, l, r) => {
+                    todo.push((l, flipped));
+                    todo.push((r, !flipped));
+                }
+                _ if flipped => under.push(x),
+                _ => over.push(x),
+            }
+            if over.len() + under.len() > 24 {
+                return;
+            }
+        }
+        let time = Dim::base(2);
+        let frequency = Dim::of(&[(2, -1)]);
+        let is_number = |x: &Expr, n: f64| match &x.kind {
+            ExprKind::Int(i) => *i as f64 == n,
+            ExprKind::Float(f) => *f == n,
+            _ => false,
+        };
+        for (side, other) in [(&over, &under), (&under, &over)] {
+            let pi = side.iter().any(|x| matches!(&x.kind, ExprKind::Ident(s) if s == "pi"));
+            let two = side.iter().any(|x| is_number(x, 2.0));
+            let sixty = other.iter().any(|x| match &x.kind {
+                ExprKind::UnitLit(v, u) => {
+                    let plain_time = u.factors.len() == 1
+                        && u.factors[0].1 == 1
+                        && self.units.get(&u.factors[0].0).is_some_and(|d| d.dim == time);
+                    *v == 60.0 && !plain_time
+                }
+                _ => is_number(x, 60.0),
+            });
+            let thirty = other.iter().any(|x| is_number(x, 30.0));
+            if !(pi && ((two && sixty) || (!two && thirty))) {
+                continue;
+            }
+            for x in side.iter() {
+                let (ty, who) = match &x.kind {
+                    ExprKind::Ident(name) => match self.lookup(name) {
+                        Found::Local(_, ty, _, _) => (ty, format!("`{}`", name)),
+                        Found::Top(id) => (self.tops[id as usize].ty.clone(), format!("`{}`", name)),
+                        Found::None => continue,
+                    },
+                    ExprKind::UnitLit(_, u) if u.factors.len() == 1 && u.factors[0].1 == 1 => {
+                        match self.units.get(&u.factors[0].0) {
+                            Some(d) => (Ty::Num(d.dim.clone()), "this value".to_string()),
+                            None => continue,
+                        }
+                    }
+                    _ => continue,
+                };
+                if self.resolve(&ty) != Ty::Num(frequency.clone()) {
+                    continue;
+                }
+                let factor = if two { "2 * pi / 60" } else { "pi / 30" };
+                self.err_hint(
+                    x.pos,
+                    format!("`{}` turns a plain rpm number into rad/s, but {} already has a unit", factor, who),
+                    "a speed written with `rpm` is stored as an angular speed, so use it as it is, \
+                     for example `torque = power / speed`",
+                );
+                return;
+            }
         }
     }
 

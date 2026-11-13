@@ -45,6 +45,9 @@ jobs:
       - name: Fuel stop names the right line
         run: python tests/fuel_location_test.py
 
+      - name: Unit hints (rpm twice, unit after a placeholder, plain number shown with a unit)
+        run: python tests/unit_hints_test.py
+
       - name: Fuzz and differential tests
         run: python tests/fuzz_test.py --out fuzz_summary.json
 

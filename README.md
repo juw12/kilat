@@ -44,7 +44,7 @@ Not overall. Python has the libraries, the tools and the community, and Kilat ha
 Kilat is aimed at one job: calculations and small scripts that have to be right and have to be
 safe to run, including code written by an AI model. The numbers below show where it is ahead on
 that job and where it is behind. A script copied them from `judge_report.json`, which
-`python judge.py` writes. Measured on 2026-11-12 with kilat 0.2.1 and CPython 3.13.2
+`python judge.py` writes. Measured on 2026-11-13 with kilat 0.2.2 and CPython 3.13.2
 on Windows 10, Intel(R) Core(TM) Ultra 7 258V.
 
 ### Mistakes found before the program runs
@@ -83,20 +83,24 @@ Python is used without NumPy.
 
 | Benchmark | Kilat (s) | CPython (s) | Times faster | Without start-up |
 |---|---|---|---|---|
-| collatz | 0.153 | 0.514 | 3.35 | 3.18 |
-| fib | 0.059 | 0.197 | 3.33 | 2.88 |
-| loop_sum | 0.092 | 0.361 | 3.92 | 3.65 |
-| mandelbrot | 0.111 | 0.454 | 4.08 | 3.86 |
-| map_count | 0.136 | 0.184 | 1.35 | 1.12 |
-| matmul | 0.061 | 0.177 | 2.89 | 2.43 |
-| nbody | 0.130 | 0.580 | 4.46 | 4.29 |
-| sieve | 0.106 | 0.267 | 2.51 | 2.24 |
-| sort | 0.075 | 0.590 | 7.87 | 7.69 |
-| strings | 0.130 | 0.178 | 1.37 | 1.12 |
+| collatz | 0.312 | 0.991 | 3.18 | 2.98 |
+| fib | 0.110 | 0.387 | 3.51 | 2.95 |
+| loop_sum | 0.177 | 0.691 | 3.91 | 3.58 |
+| mandelbrot | 0.206 | 0.865 | 4.19 | 3.92 |
+| map_count | 0.260 | 0.349 | 1.34 | 1.06 |
+| matmul | 0.110 | 0.300 | 2.73 | 2.12 |
+| nbody | 0.203 | 0.758 | 3.73 | 3.44 |
+| sieve | 0.123 | 0.313 | 2.55 | 2.00 |
+| sort | 0.093 | 0.638 | 6.88 | 6.46 |
+| strings | 0.137 | 0.198 | 1.45 | 0.90 |
 
-Geometric mean: 3.11 times faster for the whole process and 2.79 with start-up taken out.
-Start-up costs Kilat 3 ms of CPU and CPython 35 ms.
-With start-up taken out, Kilat is slower than CPython on: none; about level (within 5 %) on: none.
+Geometric mean: 3.02 times faster for the whole process and 2.54 with start-up taken out.
+Start-up costs Kilat 6 ms of CPU and CPython 81 ms.
+With start-up taken out, Kilat is slower than CPython on: `strings`; about level (within 5 %) on: none.
+The PC was in use for other work during this run, and that shows: CPython's start-up measured
+81 ms here against 35 ms in the quiet run for 0.2.1, which gave 3.11 and 2.79 with nothing slower.
+0.2.2 changed only the checker, not the part that runs programs. The run was not repeated to get
+a better number.
 Text and map work is where the two are closest, because CPython's text and dictionary code is very good.
 Kilat is a bytecode interpreter, so compiled and JIT languages are faster than both, and Python with
 NumPy would win the array benchmarks. The goal set for this version was 5 times CPython; it was not reached.
@@ -105,11 +109,11 @@ NumPy would win the array benchmarks. The goal set for this version was 5 times 
 
 | Piece | Bytes |
 |---|---|
-| kilat program | 1,271,808 |
-| kilat library | 1,719,296 |
-| docs/kilat.wasm | 722,723 |
+| kilat program | 1,282,048 |
+| kilat library | 1,728,512 |
+| docs/kilat.wasm | 728,823 |
 | docs/kilat.js | 16,007 |
-| main.js (Cairn plugin) | 362,037 |
+| main.js (Cairn plugin) | 365,625 |
 
 The program and the library need only files that are part of Windows. The WebAssembly engine has 0 imports, so it cannot reach anything the page does not hand it.
 
@@ -119,7 +123,7 @@ The program and the library need only files that are part of Windows. The WebAss
 - The Python library prints the same as the program: 11 of 11.
 - Sandbox (fuel limit, memory limit, files refused without a flag): 6 of 6.
 - In a headless browser: engine checks 79 of 79, playground and Cairn plugin checks 44 of 44.
-- In that run the plugin showed its first result 65 ms after the block was drawn, and the longest stall of a page during a run was 101 ms.
+- In that run the plugin showed its first result 104 ms after the block was drawn, and the longest stall of a page during a run was 200 ms.
 - Fuzz and differential tests (`python tests/fuzz_test.py`, seed 20261112): 11,607 generated programs
   and expressions, 0 failures. No crash, no hang, and `check` agreed with `run` every time.
   - 6,061 broken or random programs and 46 deep or runaway ones all ended as an ordinary result or error.
@@ -130,6 +134,7 @@ The program and the library need only files that are part of Windows. The WebAss
   - The test and its reference were written by the author of Kilat. Before the run, the harness was
     shown to catch a planted crash and a planted hang.
 - Fuel stop location (`python tests/fuel_location_test.py`): 4 of 4.
+- Unit hints (`python tests/unit_hints_test.py`): 20 of 20.
 - The release download check was last run for 0.2.1: `kilat.exe` fetched from that release page had
   the same SHA-256 as the build it came from, the zip held the same program, and the five examples
   printed the same lines.
@@ -156,10 +161,19 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
 - 0.2.1: a fuel stop now names the line that was running. In 0.2.0 it could name a library
   function instead (`at <prelude>:309 in to_celsius` for an empty `while true { }` loop).
   The fuzz test found this; `python tests/fuel_location_test.py` now checks four cases.
+- 0.2.2: three checker messages for mistakes that free models made in GlowCode
+  (`python tests/unit_hints_test.py`, 20 cases):
+  - `speed * 2 * pi / 60` when `speed` was written with `rpm` is refused. A speed written with
+    `rpm` is already stored as an angular speed, so that line would convert it a second time
+    and print a wrong torque.
+  - `"{force} N"` is refused when `{force}` already prints its own unit. Write `{force:N}`.
+  - Showing a plain number with a unit (`{energy:J}` after `let energy = work in J`) now says
+    why: `x in J` gives a plain number. Keep the unit on the value, or write the unit after
+    the braces.
 - GlowCode, a Glow page where a person or a model writes Kilat and the checker refuses a wrong
   program before it runs. It is merged into Glow and live at
   https://juw12.github.io/projects/glow/code/ (https://github.com/juw12/projects/pull/53).
-  The page still ships the 0.2.0 web engine, so the fuel stop fix above is not in it yet.
+  The page ships the 0.2.1 web engine (https://github.com/juw12/projects/pull/54).
 
 ## Where Kilat is behind
 

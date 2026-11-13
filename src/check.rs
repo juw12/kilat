@@ -164,6 +164,8 @@ pub(crate) enum Decl {
 pub struct Checker {
     pub(crate) errs: Vec<Diag>,
     pub(crate) units: HashMap<String, UnitDef>,
+    /// Address of the `*` or `/` operand being checked, so a product is looked at once, from its top.
+    pub(crate) product_child: usize,
     pub(crate) bases: Vec<String>,
     pub(crate) fns: Vec<FnInfo>,
     pub(crate) structs: Vec<StructInfo>,
@@ -248,6 +250,7 @@ impl Checker {
         Checker {
             errs: Vec::new(),
             units: builtin_units(),
+            product_child: 0,
             bases: BASE_NAMES.iter().map(|s| s.to_string()).collect(),
             fns: Vec::new(),
             structs: Vec::new(),
