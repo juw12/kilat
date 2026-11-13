@@ -1,0 +1,19 @@
+// String building (list + join), split and scanning.
+fn build(n: Int) -> Str {
+    var parts: List[Str] = []
+    for i in 0..n {
+        parts.push("item {i}")
+    }
+    join(parts, ",")
+}
+
+let text = build(500000)
+print(len(text))
+var total = 0
+for word in split(text, ",") {
+    if ends_with(word, "7") {
+        total += len(word)
+    }
+}
+print(total)
+print(upper(slice(text, 0, 24)))

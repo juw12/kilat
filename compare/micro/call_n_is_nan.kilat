@@ -1,0 +1,9 @@
+var total = 0
+var x = 0.5
+for i in 0..2000000 {
+    if is_nan(x) {
+        total = total + 1
+    }
+    x = x + 0.25
+}
+print(total)

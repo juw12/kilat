@@ -1,0 +1,2 @@
+let flags = fill(1000000, 0)
+print(len(flags))

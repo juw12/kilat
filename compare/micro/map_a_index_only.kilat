@@ -1,0 +1,10 @@
+fn tally(n: Int) -> Int {
+    let names = range(5000).map(|i| "key{i}")
+    var checksum = 0
+    for i in 0..n {
+        let name = names[i * 7919 % 5000]
+        checksum += 1
+    }
+    checksum + len(names)
+}
+print(tally(2000000))
