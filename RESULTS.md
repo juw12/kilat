@@ -140,31 +140,65 @@ The test and its Python reference were written by the author of Kilat.
   `python tests/fuel_location_test.py` checks four cases (4 of 4).
 - `python tests/unit_hints_test.py` checks the three checker messages added in 0.2.2 (20 of 20).
 
-## Release download check (0.2.1)
+## Release download check (0.2.2)
 
-Added by hand from a separate script that downloads the 0.2.1 release files.
+Added by hand from a separate script that downloads the 0.2.2 release files.
 
 | Check | Result |
 |---|---|
-| `kilat.exe` from the release page | 1,271,808 bytes, SHA-256 same as the local build |
+| `kilat.exe` from the release page | 1,282,048 bytes, SHA-256 same as the local build |
 | `kilat-windows-x64.zip` | 10 files; the `kilat.exe` inside has the same SHA-256 |
-| `kilat --version` on the download | `kilat 0.2.1` |
+| `kilat --version` on the download | `kilat 0.2.2` |
 | The five examples | each prints the same lines as the local build |
 | `print(2 m + 3 kg)` | refused: unit mismatch, cannot add m and kg |
 
-SHA-256 of `kilat.exe`: `73b1173f17c6a447e776453405c11f2e5587086c17a05efb94434d3e552eb4d3`
+SHA-256 of `kilat.exe`: `f98329cc44eb7d104b3fe339cef0aa008d590a6ec94c3ff339d289d3c9d79150`
 
-`install.cmd` was only run with `/dry-run`. The files are unsigned.
+`install.cmd` was not run again for 0.2.2; for 0.2.1 it was only run with `/dry-run`. The files are
+unsigned.
 
-## Reruns on GitHub's machines (0.2.1)
+## Reruns on GitHub's machines (0.2.2)
 
-Added by hand from the results of `.github/workflows/ci.yml` for the 0.2.1 commit. Each machine builds
+Added by hand from the results of `.github/workflows/ci.yml` for the 0.2.2 commit. Each machine builds
 Kilat and runs `judge.py --quick` (2 runs per program instead of 5) and the fuzz test. The script and
 the programs are the author's; no other person repeated the measurements.
 
 | Machine | CPython | Speed, whole process | Speed, net of start-up | Slower than CPython | Bugs refused | Fuzz cases | Fuzz failures |
 |---|---|---|---|---|---|---|---|
-| Windows x64 | 3.13.17 | 2.82 | 2.76 | 0 of 10 | 20 of 20 | 11,607 | 0 |
-| Linux x86_64 | 3.13.18 | 2.85 | 2.80 | 0 of 10 | 20 of 20 | 11,607 | 0 |
+| Windows x64 | 3.13.17 | 2.63 | 2.55 | 0 of 10 | 20 of 20 | 11,607 | 0 |
+| Linux x86_64 | 3.13.18 | 2.80 | 2.74 | 0 of 10 | 20 of 20 | 11,607 | 0 |
 
 Language tests 6 of 6, library tests 11 of 11 and sandbox tests 6 of 6 on both machines.
+
+## Model sample on the live GlowCode page (0.2.2)
+
+Added by hand from `judge_work/model_sample_round7.py` (not in the repository). The script opens the
+live page in Edge, types an engineering question, lets the page's free models write Kilat and counts a
+run as correct only when every expected number is printed within 1.5 %. 45 s between runs.
+
+| Run | Tasks x repeats | Correct | Correct on first try | Ran but wrong | Refused by checker | Test rig error |
+|---|---|---|---|---|---|---|
+| pair (the two tasks that failed in 0.2.1) | 2 x 3 | 6 of 6 | 6 | 0 | 0 | 0 |
+| full (same 10 tasks as for 0.2.1) | 10 x 3 | 27 of 30 | 25 | 2 | 0 | 1 |
+| held-out (4 new tasks, numbers not in the prompt) | 4 x 1 | 4 of 4 | 3 | 0 | 0 | 0 |
+
+For 0.2.1 the same 10 tasks gave 24 of 30 correct (5 refused, 1 wrong number), with shaft torque and
+spring 0 of 3 each. Both are 3 of 3 here.
+
+Read these numbers with care:
+
+- Replayed answers. The full run has only 15 different programs in 30 runs, and 14 runs came back in
+  under 3 s, so the provider replayed stored answers. The 30 runs are not 30 independent samples.
+- The prompt was taught the test. The page's model prompt now says "`rpm` is already an angular speed:
+  with `let speed = 1450 rpm`, torque is `power / speed`", the same number as the shaft-torque task. The
+  held-out run (960 rpm, 2900 rpm, other numbers) is the only check that it carries over, and it is 4 runs.
+- The three new checker messages of 0.2.2 were not seen to fire in these runs. The gain comes from the
+  prompt lines or from model variation, not provably from the checker.
+- The 2 wrong runs are one replayed program for the "readings" task. It printed
+  `mean = 2.12 mm, largest = 0.0024 m`. The value is right (2.4 mm) but shown in metres, because the
+  placeholder `{largest}` has no unit. The fixed rule counts it wrong and it stays wrong here. This is
+  an open defect: a quantity printed with no unit shows base SI, not the unit it was entered in.
+- The test rig error is one run where the click on the Run button timed out after 30 s. That run
+  measured nothing, so 29 runs were measured in the full run.
+- In the held-out run, one first try (piston force) was refused by the checker and the second try was
+  accepted. The refusal message was not recorded.

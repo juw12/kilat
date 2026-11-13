@@ -256,7 +256,7 @@ Three Kilat usability defects (real, not checker artefacts):
 - Full test suite on Windows Python 3.13.2.
 - Speed goals unchanged: 3.11x CPython whole process, 2.79x net of start-up (3x net and 5x not reached). Hone score 7.61 self-judged, below 8.5.
 
-## Handoff
+## Handoff (round 6, closed)
 
 Next queue, in order:
 
@@ -268,3 +268,73 @@ Next queue, in order:
 2. Install Kilat in my own Cairn when it is in the tray (scripts ready: `judge_work/cairn_flagged_launcher.py`, `judge_work/cairn_d_forwarder.py`), or by hand: Plugins -> turn on community plugins -> Install on the Kilat card.
 3. Full test suite on Windows Python 3.13.2.
 4. Speed (3x net, 5x) and hone score to 8.5 with an outside judge.
+
+## Round 7 (2026-11-13)
+
+- [x] A. Kilat 0.2.2 (`371b9bf` on main): three unit hints in the checker (rpm multiplied by `2 * pi / 60`, `in <unit>` followed by a unit placeholder, a unit word right after a placeholder with no unit).
+- [x] B. Local judge on my PC (CPython 3.13.2, PC in use): 3.02x whole process, 2.54x net of start-up, faster net on 9 of 10, 20 of 20 bugs refused (mypy 14). Unit hints 20 of 20, fuel location 4 of 4, fuzz 11,607 cases with 0 failures, 41 programs pass `kilat check`.
+- [x] C. Kilat CI on `371b9bf`: green (run 43350021753). Windows x64, CPython 3.13.17: 2.63x whole, 2.55x net, none slower. Linux x86_64, CPython 3.13.18: 2.80x whole, 2.74x net, none slower. Both: 20 of 20 bugs refused (mypy 14), language 6 of 6, library 11 of 11, sandbox 6 of 6, fuzz 11,607 cases with 0 failures.
+- [x] D. Release v0.2.2 published and checked by download: `kilat.exe` 1,282,048 bytes and the zip (635,718 bytes, 10 files) have the same SHA-256 as the local build; the five examples print the same lines.
+- [x] E. Cairn catalogue 0.2.1 -> 0.2.2: PR 40 merged.
+- [x] F. GlowCode web engine 0.2.2: PR 55 merged (`efb9522` on juw12/projects main). Main CI green on that commit (CI on 3.12 and 3.13, Glow regression checks, Pages deploy, IndexNow). Live `kilat.wasm` is 728,823 bytes with the pinned SHA-256; the live page in headless Edge shows "Kilat 0.2.2 is ready".
+- [x] G. Model sample on the live page rerun: pair 6 of 6, full 27 of 30, held-out 4 of 4 (numbers and caveats below).
+- [ ] H. Install Kilat in my own installed Cairn: NOT done. Cairn had its main window open, so it was left alone. Nothing in the app, its settings or the vault was changed.
+- [ ] `install.cmd` was not run for 0.2.2. The full Cairn suite on Windows Python 3.13.2 was not rerun.
+
+### Findings
+
+Speed did not improve. 0.2.1 measured 3.11x whole and 2.79x net, faster on 10 of 10. 0.2.2 measured 3.02x whole and 2.54x net on a busy PC, with `strings` slower than CPython net of start-up (0.90) and `map_count` at 1.06. CI shows no program slower on either machine, so the local `strings` figure may be noise from the busy PC; it was not rerun to pick a better number.
+
+Model sample (free models, mostly gpt-oss-20b, 45 s between runs, Kilat 0.2.2 on every measured run):
+
+| Run | Tasks x repeats | Correct | First try | Ran but wrong | Refused | Test rig error |
+|---|---|---|---|---|---|---|
+| pair | 2 x 3 | 6 | 6 | 0 | 0 | 0 |
+| full | 10 x 3 | 27 | 25 | 2 | 0 | 1 |
+| held-out | 4 x 1 | 4 | 3 | 0 | 0 | 0 |
+
+- Shaft torque and spring, 0 of 3 each in round 6, are 3 of 3 each. Round-6 baseline on the same 10 tasks: 24 correct, 5 refused, 1 wrong.
+- Caveat 1, replays: the full run has only 15 different programs in 30 runs and 14 runs answered in under 3 s. The provider replays stored answers, so these are not 30 independent samples.
+- Caveat 2, teaching to the test: PR 55 added a prompt line with the same number as the shaft-torque task (`let speed = 1450 rpm`, torque is `power / speed`). The three new checker messages were not seen to fire. The gain comes from the prompt or from model variation, not provably from the checker.
+- Held-out run (960 rpm and 3 kW -> 29.84 N*m; 4.5 N/mm x 20 mm -> 90.0 N and 0.900 J; 35 N*m at 2900 rpm -> 10.63 kW; 2.5 MPa on an 80 mm piston -> 12.57 kN): 4 of 4, fresh answers (24 to 75 s each). The rpm hint carried over to other numbers. Only 4 runs, so an indication.
+- New defect found: the 2 wrong runs are one replayed program for "readings" that printed `mean = 2.12 mm, largest = 0.0024 m`. The value is right but in metres, because `{largest}` has no unit. 0.2.2 only refuses a unit word right after such a placeholder; the placeholder alone still prints base SI. Counted as wrong, not reclassified.
+- The test rig error: one click on the Run button timed out after 30 s (average speed, repeat 3). 29 runs were measured in the full run.
+
+Mistakes and trouble in this round:
+
+1. My first judge run used the wrong interpreter (CPython 3.13.11, no mypy installed): 2.96x whole, 2.67x net. Rerun on my own CPython 3.13.2; both runs are reported, the 3.13.2 one is the one in `RESULTS.md`.
+2. The proxy blocked git and the GitHub API for parts of the round. Pushes were retried in the background until the proxy admitted them; nothing was routed around it.
+3. My first push to the GlowCode PR failed the Glow regression checks, because I had not updated the pinned hash of `kilat.wasm`. Fixed in `b64e87c`.
+4. PR 55 was merged while `apps/fade/tests/verify_api.py` was red on the PR run (409, then `KeyError: 'booking'` at line 298). The same test fails the same way on unmodified `origin/main` on my PC, and it passed on main CI after the merge. It is a flaky, time-dependent test, probably `first_free_slot` using today's date (read from the code, not confirmed). `apps/fade` was not edited.
+5. The first start of the model sample failed because the environment variable `KILAT_UPSTREAM_PROXY` was not set.
+
+### Assumptions
+
+- Merging PR 55 with the unrelated `fade` test red was acceptable, because the failure reproduces on unmodified main.
+- A sample with replayed answers and a prompt taught on the test numbers is weak evidence. The held-out run is the better signal and it is 4 runs.
+- Leaving Cairn alone while its window is open is the right call.
+
+### Still not verified
+
+- Kilat is not installed in my own Cairn; block rendering inside my real notes.
+- `install.cmd` real run for 0.2.2 (0.2.1 was only run with `/dry-run`).
+- Full Cairn test suite on Windows Python 3.13.2.
+- Whether the three new checker hints help a model in practice (never seen to fire in the sample).
+- Model reliability on independent answers (not replays).
+- Speed goals not reached: 3x net and 5x. Hone score 7.61 self-judged, below 8.5, no outside judge.
+- Kilat has not been shown to beat Python overall. It is faster on these 10 small programs and refuses more of these 20 bugs; Python's libraries, tools and users are not matched.
+
+## Handoff
+
+Next queue, in order:
+
+1. Kilat 0.2.3 (kilat repo, GlowCode web engine, Cairn catalogue):
+   - A quantity printed with no unit (`{largest}`) shows base SI ("0.0024 m"). Show it in the unit it was entered in, or refuse with the hint "write `{largest:mm}`", and add a line to the GlowCode model prompt.
+   - Sample script: record the checker's refusal message for each failed try; make the click on the Run button robust (retry once, then count a rig error).
+   - Rerun the 10 tasks and a larger held-out set. Target: readings 3 of 3, no value shown in an unexpected unit.
+2. Install Kilat in my own Cairn by hand: Plugins -> turn on community plugins -> Install on the Kilat card.
+3. Full Cairn test suite on Windows Python 3.13.2.
+4. Real `install.cmd` run for the current release.
+5. Flaky `apps/fade/tests/verify_api.py` in juw12/projects (my call; not touched).
+6. Speed (3x net, 5x) and hone score to 8.5 with an outside judge.
+7. Model samples that are independent (fresh answers, held-out tasks, more than one provider).
