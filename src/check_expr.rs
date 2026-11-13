@@ -4,6 +4,7 @@ use crate::ast::*;
 use crate::builtins::B;
 use crate::check::*;
 use crate::parser::parse_unit_str;
+use crate::show::*;
 use crate::tir::*;
 use crate::types::*;
 
@@ -126,10 +127,12 @@ impl Checker {
                         InterpPart::Lit(s) => out.push(te(TKind::Str(s.clone()), pos)),
                         InterpPart::Expr(inner, spec) => {
                             let (v, vty) = self.expr(inner, &Expect::Infer);
-                            let own_unit = self.display(v, &vty, spec.as_deref(), inner.pos, &mut out);
-                            if let (true, Some(InterpPart::Lit(after))) = (own_unit, parts.get(i + 1)) {
-                                self.unit_word_after(inner, spec.as_deref(), after);
-                            }
+                            let after = match parts.get(i + 1) {
+                                Some(InterpPart::Lit(text)) => Some(text.as_str()),
+                                _ => None,
+                            };
+                            let at = Shown { expr: &**inner, kind: ShowKind::Interp, after };
+                            self.display(v, &vty, spec.as_deref(), at, &mut out);
                         }
                     }
                 }
@@ -178,10 +181,16 @@ impl Checker {
             ExprKind::Coalesce(a, b) => self.coalesce(a, b, pos),
             ExprKind::Convert(inner, u) => self.convert(inner, u, pos),
             ExprKind::Call(callee, args) => match &callee.kind {
-                ExprKind::Ident(name) => self.call_name(name, None, args, pos, ex),
+                ExprKind::Ident(name) => {
+                    self.note_lambdas(None, args);
+                    self.call_name(name, None, args, pos, ex)
+                }
                 _ => self.call_value(callee, args, pos),
             },
-            ExprKind::Method(recv, name, args) => self.call_name(name, Some(&**recv), args, pos, ex),
+            ExprKind::Method(recv, name, args) => {
+                self.note_lambdas(Some(&**recv), args);
+                self.call_name(name, Some(&**recv), args, pos, ex)
+            }
             ExprKind::Field(obj, name) => {
                 let (o, ot) = self.expr(obj, &Expect::Infer);
                 match self.field_of(&ot, name, pos) {
@@ -255,6 +264,9 @@ impl Checker {
                     let ret = self.fn_ret(fid, pos);
                     let n = self.fns[fid as usize].tparams.len();
                     let vars = self.fresh_vars(n);
+                    if n > 0 {
+                        self.note_generic_use(fid, &vars, pos, name, &[]);
+                    }
                     let params: Vec<Ty> = self.fns[fid as usize].params.iter().map(|p| Self::inst(p, &vars)).collect();
                     let ret = Self::inst(&ret, &vars);
                     return (te(TKind::FnRef(fid), pos), Ty::Fn(params, Box::new(ret)));
@@ -989,7 +1001,8 @@ impl Checker {
                         parts.push(te(TKind::Str(" ".to_string()), pos));
                     }
                     let (v, t) = self.expr(a, &Expect::Infer);
-                    self.display(v, &t, None, a.pos, &mut parts);
+                    let at = Shown { expr: *a, kind: ShowKind::Print, after: None };
+                    self.display(v, &t, None, at, &mut parts);
                 }
                 let s = self.strcat(parts, pos);
                 Some((te(TKind::CallBuiltin(B::Print as u16, vec![s]), pos), Ty::Unit))
@@ -1000,7 +1013,8 @@ impl Checker {
                 }
                 let (v, t) = self.expr(argv[0], &Expect::Infer);
                 let mut parts = Vec::new();
-                self.display(v, &t, None, argv[0].pos, &mut parts);
+                let at = Shown { expr: argv[0], kind: ShowKind::Str, after: None };
+                self.display(v, &t, None, at, &mut parts);
                 Some((self.strcat(parts, pos), Ty::Str))
             }
             "assert" => {
@@ -1023,7 +1037,11 @@ impl Checker {
                 let (r, rt) = self.expr(argv[1], &Expect::Has(lt.clone()));
                 let (eq, ty) = self.bin_typed(BinOp::Eq, l, &lt, r, &rt, pos);
                 match eq.kind {
-                    TKind::Bin(_, a, b) => Some((te(TKind::CallBuiltin(B::AssertEq as u16, vec![*a, *b]), pos), Ty::Unit)),
+                    TKind::Bin(_, a, b) => {
+                        let mut args = vec![*a, *b];
+                        args.extend(self.assert_eq_unit(&lt, argv));
+                        Some((te(TKind::CallBuiltin(B::AssertEq as u16, args), pos), Ty::Unit))
+                    }
                     other => Some((te(other, pos), ty)),
                 }
             }
@@ -1353,6 +1371,9 @@ impl Checker {
             }
         };
         let vars = self.fresh_vars(ntp);
+        if let (Cand::Fn(fid), true) = (cand, ntp > 0) {
+            self.note_generic_use(fid, &vars, pos, name, argv);
+        }
         let ptys: Vec<Ty> = params.iter().map(|p| Self::inst(p, &vars)).collect();
         let rty = Self::inst(&ret, &vars);
         if let Expect::Has(t) = ex {
@@ -1444,7 +1465,9 @@ impl Checker {
     // ---- text
 
     /// Push the parts that show `v` as text (used by `print`, `str` and `"{...}"`).
-    pub(crate) fn display(&mut self, v: TExpr, ty: &Ty, spec: Option<&str>, pos: Pos, out: &mut Vec<TExpr>) -> bool {
+    /// A number with a unit is shown only in a unit the program names (see `show.rs`).
+    pub(crate) fn display(&mut self, v: TExpr, ty: &Ty, spec: Option<&str>, at: Shown, out: &mut Vec<TExpr>) {
+        let pos = at.expr.pos;
         let (mut align, mut width, mut prec) = (0i64, -1i64, -1i64);
         let mut unit_text = String::new();
         if let Some(raw) = spec {
@@ -1456,7 +1479,11 @@ impl Checker {
                 align = 2;
                 rest = r;
             }
-            let digits = rest.chars().take_while(|c| c.is_ascii_digit()).count();
+            let mut digits = rest.chars().take_while(|c| c.is_ascii_digit()).count();
+            // In `{f:1/s}` the `1` starts the unit; it is not a width.
+            if digits > 0 && rest[digits..].starts_with('/') && rest[..digits].ends_with('1') {
+                digits -= 1;
+            }
             if digits > 0 {
                 width = rest[..digits].parse::<i64>().unwrap_or(0).min(500);
                 rest = &rest[digits..];
@@ -1468,7 +1495,7 @@ impl Checker {
                     rest = &rest[..dot];
                 } else {
                     self.err_hint(pos, format!("cannot read the format `{}`", raw), FORMAT_HELP);
-                    return false;
+                    return;
                 }
             }
             unit_text = rest.trim().to_string();
@@ -1478,19 +1505,22 @@ impl Checker {
                 Ok(u) => u,
                 Err(_) => {
                     self.err_hint(pos, format!("cannot read the format `{}`", spec.unwrap_or("")), FORMAT_HELP);
-                    return false;
+                    return;
                 }
             };
             let (dim, num, den) = match self.unit_def(&ue, false) {
                 Some(x) => x,
-                None => return false,
+                None => return,
             };
             let v = match self.resolve(ty) {
                 Ty::Num(d) if d == dim => v,
                 Ty::Int if dim.is_none() => Self::to_float(v),
-                Ty::Error => return false,
+                // A lambda parameter whose type is not known yet: the unit named here decides it.
+                Ty::Var(_) if self.unify(ty, &Ty::Num(dim.clone())) => v,
+                Ty::Error => return,
                 other => {
                     let msg = format!("unit mismatch: cannot show {} as {}", self.show(&other), unit_text);
+                    let list_of_unit = matches!(&other, Ty::List(inner) if self.resolve(inner) == Ty::Num(dim.clone()));
                     if other == Ty::Int || other.is_float() {
                         let digits = if prec >= 0 { format!(":.{}", prec) } else { String::new() };
                         let hint = format!(
@@ -1501,53 +1531,36 @@ impl Checker {
                             d = digits
                         );
                         self.err_hint(pos, msg, hint);
+                    } else if list_of_unit {
+                        let hint = format!(
+                            "a list has no single number to show; show the numbers one by one in a loop, \
+                             or for the plain numbers use `.map(|x| x in {})`",
+                            unit_text
+                        );
+                        self.err_hint(pos, msg, hint);
                     } else {
                         self.err(pos, msg);
                     }
-                    return false;
+                    return;
                 }
             };
             out.push(fmt_call(scale(v, den, num), width, prec, align, pos));
             out.push(te(TKind::Str(format!(" {}", unit_text)), pos));
-            return false;
-        }
-        let mut own_unit = false;
-        match self.resolve(ty) {
-            Ty::Str if width < 0 && prec < 0 => out.push(v),
-            Ty::Num(d) if !d.is_none() => {
-                let name = dim_name(&d, &self.bases);
-                out.push(fmt_call(v, width, prec, align, pos));
-                out.push(te(TKind::Str(format!(" {}", name)), pos));
-                own_unit = true;
+            self.note_shown_unit(at.expr, &unit_text);
+            if let (ShowKind::Interp, Some(after)) = (at.kind, at.after) {
+                self.second_unit_after(&unit_text, after, pos);
             }
-            Ty::Unit => self.err(pos, "this expression gives no value to show"),
-            Ty::Error => {}
-            _ => out.push(fmt_call(v, width, prec, align, pos)),
-        }
-        own_unit
-    }
-
-    /// `"{force} N"` would print two units ("96 N N"): the placeholder already prints one.
-    fn unit_word_after(&mut self, inner: &Expr, spec: Option<&str>, after: &str) {
-        let rest = after.strip_prefix(' ').unwrap_or(after);
-        let word: String = rest.chars().take_while(|c| c.is_alphabetic()).collect();
-        let joined = matches!(rest[word.len()..].chars().next(), Some(c) if c.is_alphanumeric() || c == '_');
-        if word.is_empty() || joined || !self.units.contains_key(&word) {
             return;
         }
-        let name = match &inner.kind {
-            ExprKind::Ident(n) => n.as_str(),
-            _ => "value",
-        };
-        let digits = match spec.map(str::trim) {
-            Some(s) => s.rfind('.').map(|dot| &s[dot..]).unwrap_or(""),
-            None => "",
-        };
-        self.err_hint(
-            inner.pos,
-            format!("this placeholder already prints a unit, so the `{}` after it would be a second unit", word),
-            format!("put the unit inside the braces and delete the one after them: `{{{}:{}{}}}`", name, word, digits),
-        );
+        match self.resolve(ty) {
+            Ty::Str if width < 0 && prec < 0 => out.push(v),
+            Ty::Unit => self.err(pos, "this expression gives no value to show"),
+            Ty::Error => {}
+            _ => {
+                self.check_shown(ty, spec, at);
+                out.push(fmt_call(v, width, prec, align, pos));
+            }
+        }
     }
 
     /// `speed * 2 * pi / 60` where `speed` already has a unit: a speed written with `rpm`
@@ -1801,6 +1814,7 @@ impl Checker {
         let mut branches: Vec<(TExpr, Ty, Pos)> = Vec::with_capacity(arms.len());
         for arm in arms {
             self.push_scope();
+            self.note_pat(&arm.pat, None, Some(scrut));
             let pat = self.pattern(&arm.pat, &st);
             let guard = arm.guard.as_ref().map(|g| self.expect_ty(g, &Ty::Bool, "match guard"));
             let (b, bt) = if discard {

@@ -1,0 +1,136 @@
+// Edge cases for the builtins that have a short path in the runtime
+// (abs, min, max, floor, ceil, round, trunc, int, float, is_nan, approx,
+// starts_with, ends_with, get_or, has). The expected output was written by
+// the 0.2.3 build from before the short path existed.
+
+let huge = 1e308 * 10.0
+let nan = huge - huge
+
+// abs
+print(abs(-3), abs(3), abs(0), abs(-2.5), abs(-0.0), abs(-huge), abs(nan))
+print(abs(-9223372036854775807), abs(-12 mm) in mm)
+
+// min and max
+print(min(2, 3), max(2, 3), min(-3, 3), max(-3, 3), min(7, 7))
+print(min(2.5, 2.25), max(2.5, 2.25), min(2, 3.5), max(2, 3.5))
+print(min(-0.0, 0.0), max(-0.0, 0.0))
+print(min(nan, 1.0), min(1.0, nan), max(nan, 1.0), max(1.0, nan))
+print(min(huge, 1.0), max(-huge, 1.0), max(huge, 1.0))
+print(min("b", "a"), max("b", "a"), min("", "a") + "|", max("é", "z"), min("ab", "abc"))
+print(min(3 mm, 0.2 cm) in mm, max(3 mm, 0.2 cm) in mm)
+
+// floor, ceil, round, trunc, int
+print(floor(2.7), floor(-2.1), floor(-0.0), floor(5.0), floor(1e15 + 0.5))
+print(ceil(2.1), ceil(-2.9), ceil(-0.5), ceil(5.0), ceil(-1e15 - 0.5))
+print(round(0.5), round(1.5), round(2.5), round(-0.5), round(-1.5), round(-2.5), round(0.49999))
+print(trunc(2.9), trunc(-2.9), trunc(-0.9), int(3.9), int(-3.9), int(-0.9))
+print(int(9223372036854774784.0), trunc(-9223372036854775808.0))
+print(map([-1.5, 2.5, 0.25], |x| floor(x)), map([-1.5, 2.5], |x| ceil(x)), map([-1.5, 2.5], |x| round(x)))
+
+// float, is_nan, approx
+print(float(3), float(-7), float(0), map([1, 2], |n| float(n)))
+print(is_nan(nan), is_nan(huge), is_nan(1.5), is_nan(0.0))
+print(approx(1.0, 1.0005, 0.001), approx(1.0, 1.002, 0.001), approx(1, 2, 1), approx(1, 3, 1))
+print(approx(10 mm, 1.0001 cm, 0.01 mm), approx(nan, 1.0, 1.0), approx(huge, huge, 1.0), approx(-1.0, 1.0, 2.0))
+
+// starts_with and ends_with
+print(starts_with("", ""), starts_with("abc", ""), starts_with("abc", "ab"), starts_with("abc", "abcd"), starts_with("abc", "b"))
+print(ends_with("", ""), ends_with("", "x"), ends_with("abc", "bc"), ends_with("a", "aa"), ends_with("abc", "b"))
+print(starts_with("héllo", "hé"), ends_with("héllo", "llo"), "item 17".ends_with("7"), "日本語".starts_with("日"))
+
+// has and get_or with text keys and whole-number keys
+var stock = ["bolt": 40, "nut": 0]
+var sizes: Map[Int, Str] = [:]
+sizes[5] = "five"
+sizes[-1] = "minus one"
+print(has(stock, "bolt"), has(stock, "washer"), stock.has("nut"), has(sizes, 5), has(sizes, 6), sizes.has(-1))
+print(get_or(stock, "bolt", -1), get_or(stock, "nut", -1), get_or(stock, "washer", -1))
+print(get_or(sizes, 5, "none"), sizes.get_or(-1, "none"), sizes.get_or(0, "none"))
+print(len(stock), stock.len(), len(sizes))
+let empty: Map[Str, Float] = [:]
+print(get_or(empty, "x", 1.5), has(empty, "x"), len(empty))
+
+// get_or with calculated arguments
+let prefix = "bo"
+print(get_or(stock, prefix + "lt", 0) + get_or(stock, "n" + "ut", 5), get_or(stock, "missing", 2 * 21))
+print(get_or(sizes, 2 + 3, "none"), get_or(sizes, len(stock), upper("none")))
+
+// nested get_or
+let alias = ["m6": "bolt", "m6n": "nut"]
+print(get_or(stock, get_or(alias, "m6", "?"), -1), get_or(stock, get_or(alias, "m8", "?"), get_or(stock, "bolt", 0) + 1))
+
+// the result goes back into a variable that was also an argument
+var name = "a"
+let next = ["a": "b", "b": "c"]
+name = next.get_or(name, "end")
+print(name)
+name = next.get_or(name, "end")
+print(name)
+name = next.get_or(name, "end")
+print(name)
+var count = 7
+count = stock.get_or("bolt", count)
+print(count)
+count = stock.get_or("washer", count)
+print(count)
+var inner = ["x": 1]
+let outer = ["first": ["y": 2]]
+inner = get_or(outer, "first", inner)
+print(inner)
+inner = get_or(outer, "missing", inner)
+print(inner)
+
+// a later argument that changes a variable used by an earlier one:
+// arguments are worked out left to right, and each keeps the value it had
+var key = "bolt"
+let a1 = get_or(stock, key, { key = "nut"; -5 })
+print(a1, key)
+var which = ["bolt": 1]
+let other = ["bolt": 99]
+let a2 = get_or(which, { which = other; "bolt" }, 0)
+print(a2, which)
+var missing = "zz"
+let a3 = get_or(stock, missing, { missing = "bolt"; -7 })
+print(a3, missing)
+var base = 10
+let a4 = get_or(stock, { base = 20; "washer" }, base)
+print(a4, base)
+var steps = 0
+let a5 = get_or(stock, { steps += 1; "bolt" }, { steps += 10; 0 })
+print(a5, steps)
+
+// the same inside a function, where the variables are locals
+fn lookup(table: Map[Str, Int], first: Str) -> Int {
+    var k = first
+    let found = get_or(table, k, { k = "nut"; -5 })
+    var t = table
+    let again = get_or(t, { t = ["bolt": 1000]; "bolt" }, 0)
+    found + again + len(k)
+}
+print(lookup(stock, "bolt"), lookup(stock, "none"))
+
+// top-level variables that a function also reads are kept outside the registers
+var shared = ["on": 1]
+var shared_key = "on"
+fn read_shared() -> Int { get_or(shared, shared_key, -1) }
+print(read_shared(), get_or(shared, shared_key, { shared_key = "off"; -2 }), read_shared())
+shared["off"] = 5
+print(read_shared(), get_or(shared, shared_key, 0))
+
+// get_or in a loop, in a lambda and through a method chain
+var counts: Map[Str, Int] = [:]
+for word in "the quick brown the lazy the end".split(" ") {
+    counts[word] = counts.get_or(word, 0) + 1
+}
+print(counts["the"], counts.get_or("quick", 0), counts.get_or("slow", 0), len(counts))
+let pick = |k| get_or(stock, k, -1)
+print(pick("bolt"), pick("washer"), map(["nut", "x"], |k| stock.get_or(k, 9)))
+let flags = ["a": true]
+let ratios = ["half": 0.5]
+let lists = ["one": [1]]
+print(get_or(flags, "a", false), get_or(flags, "b", false), get_or(ratios, "half", 0.0), get_or(ratios, "third", 1 / 3))
+print(get_or(lists, "one", []), get_or(lists, "two", [2, 2]), get_or(lists, "two", []))
+
+// clamp and len of a map stay on the general path
+print(clamp(15, 0, 10), clamp(-3.5, 0.0, 1.0), clamp("m", "a", "f"), clamp(5, 0, 10))
+print("edge cases ok")

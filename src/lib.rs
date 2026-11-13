@@ -15,6 +15,7 @@ pub mod heap;
 pub mod lexer;
 pub mod natives;
 pub mod parser;
+pub mod show;
 pub mod tir;
 pub mod types;
 pub mod vm;

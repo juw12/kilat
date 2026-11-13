@@ -13,6 +13,9 @@ use std::fmt::Write;
 
 const MAX_DEPTH: u32 = 200;
 const MAX_STEPS: u64 = 100_000_000;
+/// Added to a failed `assert_eq` whose two sides print the same.
+const ROUNDING_NOTE: &str =
+    " (the two differ only beyond the digits shown; for calculated numbers use `assert(approx(a, b, tolerance))`)";
 
 // Variant ids of the prelude enums (the checker verifies their order).
 const T_NONE: u32 = 0;
@@ -1677,8 +1680,20 @@ pub fn call(core: &mut Core, id: u16, args: &[Value]) -> Result<Value, Trap> {
             if equal(core, x, y)? {
                 return Ok(Value::Unit);
             }
+            // The checker adds (divide, multiply, unit text) for two numbers with a unit,
+            // or one note when the values hold such numbers.
+            if args.len() == 5 {
+                let (scale_up, scale_down) = (num(2)?, num(3)?);
+                let unit = core.heap.str_of(arg(4)?)?.to_string();
+                let left = show_float(num(0)? * scale_up / scale_down);
+                let right = show_float(num(1)? * scale_up / scale_down);
+                let rounding = if left == right { ROUNDING_NOTE } else { "" };
+                return err(format!("assertion failed: {left}{unit} is not equal to {right}{unit}{rounding}"));
+            }
+            let note = if args.len() == 3 { core.heap.str_of(arg(2)?)?.to_string() } else { String::new() };
             let (left, right) = (display(core, x, true)?, display(core, y, true)?);
-            err(format!("assertion failed: {} is not equal to {}", left, right))
+            let rounding = if left == right { ROUNDING_NOTE } else { "" };
+            err(format!("assertion failed: {left} is not equal to {right}{note}{rounding}"))
         }
         B::Sqrt => {
             let x = num(0)?;

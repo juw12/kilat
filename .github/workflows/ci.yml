@@ -45,7 +45,7 @@ jobs:
       - name: Fuel stop names the right line
         run: python tests/fuel_location_test.py
 
-      - name: Unit hints (rpm twice, unit after a placeholder, plain number shown with a unit)
+      - name: Units shown only with a named unit, and the hints (rpm twice, eval, assert_eq)
         run: python tests/unit_hints_test.py
 
       - name: Fuzz and differential tests
@@ -63,3 +63,6 @@ jobs:
             judge_report.json
             RESULTS.md
             fuzz_summary.json
+            docs/kilat.wasm
+            target/release/kilat.exe
+            target/release/kilat

@@ -4,22 +4,29 @@ let area = 20 mm * 5 mm
 let stress = force / area
 assert(approx(stress in MPa, 12.0, 1e-9))
 let s2: Pa = stress
-print("{stress:MPa.2}", stress, s2 == stress)
+print("{stress:MPa.2}", "{stress:Pa}", s2 == stress)
 let e = 0.5 * 1200 kg * (25 m/s) ^ 2
-print("{e:kJ.1}", e)
+print("{e:kJ.1}", "{e:J}")
 unit USD
 unit EUR = 1.1 USD
 let price = 20 EUR
-print(price in USD, price)
+print(price in USD, "{price:USD}", "{price:EUR}")
 let rate = 3 USD / 1 kg
-print(rate * 4 kg)
+print("{rate * 4 kg:USD}")
 assert_eq(sqrt(16 m^2), 4 m)
 assert_eq(100 cm == 1 m, true)
 assert(5 km > 3 mile)
-print(max(3 m, 200 cm), abs(-2 N), sum([1 kg, 500 g]))
+print("{max(3 m, 200 cm):m}", "{abs(-2 N):N}", "{sum([1 kg, 500 g]):kg}")
 print(1 h in min, 1 kWh in MJ, 1 hp in W, 30 deg in rad, 60 rpm in Hz, 1 atm in psi)
 let thickness = 20 mm
 print("{thickness:mm}", "{thickness:inch.3}", thickness in um)
 fn hoop_stress(pressure: Pa, radius: m, wall: m) -> Pa { pressure * radius / wall }
 print("{hoop_stress(2 bar, 150 mm, 3 mm):MPa.1}")
-print(g0, 75 kg * g0, 1 N*m, 2 kg/m^3, 5 m/s^2, 3 W, 2 V, 1 ohm, 4 Hz)
+print("{g0:m/s^2}", "{75 kg * g0:N}", "{1 N*m:N*m}", "{1 N*m:J}", "{2 kg/m^3:kg/m^3}", "{5 m/s^2:m/s^2}")
+print("{3 W:W}", "{2 V:V}", "{1 ohm:ohm}", "{4 Hz:Hz}", "{4 Hz:1/s}")
+// A value with a unit is only ever shown in a unit the program names.
+let speed = 1450 rpm
+print("{speed:rpm.0}", "{speed:rad/s.2}", "{speed:>12rpm.1}|", "{thickness:<10mm.2}|")
+let sizes = [2.4 mm, 3.1 mm]
+print(sizes.map(|x| x in mm), len(sizes))
+for size in sizes { print("{size:mm}") }

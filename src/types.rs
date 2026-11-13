@@ -179,8 +179,15 @@ pub const BASE_NAMES: [&str; 7] = ["m", "kg", "s", "A", "K", "mol", "cd"];
 
 const PI: f64 = std::f64::consts::PI;
 
-/// The built-in unit table. Every unit is `num / den` SI base units.
+/// The built-in unit table as a map. Every unit is `num / den` SI base units.
 pub fn builtin_units() -> HashMap<String, UnitDef> {
+    builtin_unit_list().into_iter().collect()
+}
+
+/// The built-in unit table in its written order (length first, then mass,
+/// time, force, ...). The order is what a hint uses to pick which unit to
+/// suggest first, so keep the everyday unit of each kind near the top.
+pub fn builtin_unit_list() -> Vec<(String, UnitDef)> {
     let none = Dim::none();
     let length = Dim::of(&[(0, 1)]);
     let mass = Dim::of(&[(1, 1)]);
@@ -301,42 +308,28 @@ pub fn builtin_units() -> HashMap<String, UnitDef> {
         ("ppm", &none, 1.0, 1e6),
     ];
 
-    let mut map = HashMap::new();
+    let mut list: Vec<(String, UnitDef)> = Vec::new();
     for (name, dim, num, den) in table {
-        map.insert(
+        list.push((
             name.to_string(),
             UnitDef {
                 dim: dim.clone(),
                 num,
                 den,
             },
-        );
+        ));
     }
-    map.insert(
-        "K".to_string(),
-        UnitDef {
-            dim: Dim::base(4),
-            num: 1.0,
-            den: 1.0,
-        },
-    );
-    map.insert(
-        "mol".to_string(),
-        UnitDef {
-            dim: Dim::base(5),
-            num: 1.0,
-            den: 1.0,
-        },
-    );
-    map.insert(
-        "cd".to_string(),
-        UnitDef {
-            dim: Dim::base(6),
-            num: 1.0,
-            den: 1.0,
-        },
-    );
-    map
+    for (name, base) in [("K", 4u16), ("mol", 5u16), ("cd", 6u16)] {
+        list.push((
+            name.to_string(),
+            UnitDef {
+                dim: Dim::base(base),
+                num: 1.0,
+                den: 1.0,
+            },
+        ));
+    }
+    list
 }
 
 /// Human-readable SI name of a dimension, e.g. `N`, `m/s^2`, `kg/m^3`.

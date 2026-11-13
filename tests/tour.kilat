@@ -40,7 +40,7 @@ print("torque = {torque:N*m.2}")
 let speed = 90 km/h
 print("speed = {speed:m/s.1}, in mph {speed in mph}")
 let t: K = celsius(25.0)
-print(t, to_celsius(t))
+print("{t:K}", to_celsius(t))
 
 let words = "the quick brown fox jumps over the lazy dog the end".split(" ")
 var counts: Map[Str, Int] = [:]

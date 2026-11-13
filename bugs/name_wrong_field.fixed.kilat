@@ -1,4 +1,4 @@
 // FIXED (names): the field is `mass`, not `mas`
 struct Part { name: Str, mass: kg }
 let p = Part(name: "bracket", mass: 0.25 kg)
-print(p.mass)
+print("{p.mass:kg}")

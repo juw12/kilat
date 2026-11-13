@@ -2,4 +2,5 @@
 fn braking_distance(speed: m/s, decel: m/s^2) -> m {
     speed ^ 2 / (2 * decel)
 }
-print(braking_distance(90, 7.5 m/s^2))
+let distance = braking_distance(90, 7.5 m/s^2)
+print("{distance:m.1}")

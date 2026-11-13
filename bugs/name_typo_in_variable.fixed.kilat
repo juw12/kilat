@@ -1,4 +1,4 @@
 // FIXED (names): `diametre` is a typo for `diameter`
 let diameter = 25 mm
 let radius = diameter / 2
-print(radius)
+print("{radius:mm}")

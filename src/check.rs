@@ -5,6 +5,7 @@
 use crate::ast::*;
 use crate::builtins::BUILTINS;
 use crate::parser::parse_sig;
+use crate::show::*;
 use crate::tir::*;
 use crate::types::*;
 use std::collections::{HashMap, HashSet};
@@ -40,6 +41,8 @@ pub(crate) struct FnInfo {
     pub body: Option<TExpr>,
     pub nslots: u32,
     pub captures: Vec<u32>,
+    /// Type parameters whose values this function turns into text (see `show.rs`).
+    pub shown: Vec<bool>,
     pub pos: Pos,
 }
 
@@ -188,6 +191,15 @@ pub struct Checker {
     pub(crate) assigns: u32,
     pub(crate) depth: u32,
     pub(crate) tests: Vec<(String, u32)>,
+    /// The declared function whose body is being checked (not set for lambdas, tests or the main body).
+    pub(crate) cur_fn: Option<u32>,
+    pub(crate) late_shows: Vec<LateShow>,
+    pub(crate) generic_uses: Vec<GenericUse>,
+    /// Units the program wrote near a name, used only to word hints (see `show.rs`).
+    pub(crate) unit_seen: HashMap<String, Vec<String>>,
+    pub(crate) unit_local: HashMap<String, Vec<String>>,
+    /// Built-in unit names in their listed order.
+    pub(crate) unit_order: Vec<String>,
 }
 
 pub(crate) fn te(kind: TKind, pos: Pos) -> TExpr {
@@ -247,9 +259,11 @@ fn stmt_pos(s: &Stmt) -> Pos {
 
 impl Checker {
     fn new() -> Checker {
+        let unit_list = builtin_unit_list();
+        let unit_order: Vec<String> = unit_list.iter().map(|(name, _)| name.clone()).collect();
         Checker {
             errs: Vec::new(),
-            units: builtin_units(),
+            units: unit_list.into_iter().collect(),
             product_child: 0,
             bases: BASE_NAMES.iter().map(|s| s.to_string()).collect(),
             fns: Vec::new(),
@@ -272,6 +286,12 @@ impl Checker {
             assigns: 0,
             depth: 0,
             tests: Vec::new(),
+            cur_fn: None,
+            late_shows: Vec::new(),
+            generic_uses: Vec::new(),
+            unit_seen: HashMap::new(),
+            unit_local: HashMap::new(),
+            unit_order,
         }
     }
 
@@ -787,6 +807,7 @@ impl Checker {
             body: None,
             nslots: 0,
             captures: Vec::new(),
+            shown: Vec::new(),
             pos,
         });
         self.fns.len() as u32 - 1
@@ -889,6 +910,7 @@ impl Checker {
                             self.err(*fpos, format!("field `{}` is listed twice", fname));
                         }
                         let ty = self.ty_expr(fty);
+                        self.note_field(fname, fty);
                         fields.push((fname.clone(), ty));
                     }
                     self.structs[id as usize].fields = fields;
@@ -1037,6 +1059,7 @@ impl Checker {
             }) = item
             {
                 if !*mutable && is_literal(init) {
+                    self.note_unit(name, None, Some(init));
                     let (v, vty) = self.expr(init, &Expect::Infer);
                     if let Some(&old) = self.top_names.get(name) {
                         if !self.tops[old as usize].prelude {
@@ -1075,6 +1098,11 @@ impl Checker {
         }
         self.declare_builtins();
         self.declare_fns(items);
+        for item in items {
+            if let Item::Fn(d) = item {
+                self.note_fn_ret(d);
+            }
+        }
         let hoisted = self.hoist_consts(items);
 
         // The main body: top-level statements in order.
@@ -1107,7 +1135,8 @@ impl Checker {
                             out.push(v);
                         } else {
                             let mut parts = Vec::new();
-                            self.display(v, &vty, None, e.pos, &mut parts);
+                            let at = Shown { expr: e, kind: ShowKind::Last, after: None };
+                            self.display(v, &vty, None, at, &mut parts);
                             let s = self.strcat(parts, e.pos);
                             out.push(te(TKind::CallBuiltin(crate::builtins::B::Print as u16, vec![s]), e.pos));
                         }
@@ -1156,6 +1185,7 @@ impl Checker {
                 self.tests.push((name.clone(), tid));
             }
         }
+        self.finish_shows();
     }
 
     pub(crate) fn check_fn_body(&mut self, fid: u32) {
@@ -1164,6 +1194,8 @@ impl Checker {
             None => return,
         };
         self.fns[fid as usize].state = 1;
+        let saved_cur_fn = std::mem::replace(&mut self.cur_fn, Some(fid));
+        let saved_unit_local = std::mem::take(&mut self.unit_local);
         let saved_ctxs = std::mem::take(&mut self.ctxs);
         let saved_tscope = std::mem::replace(&mut self.tscope, decl.tparams.clone());
         let fn_bounds = self.fns[fid as usize].bounds.clone();
@@ -1173,6 +1205,9 @@ impl Checker {
             Some(t) => t.clone(),
             None => self.fresh(),
         };
+        for (name, ty, _) in &decl.params {
+            self.note_unit(name, Some(ty), None);
+        }
         let mut scope = Vec::new();
         for (i, (name, _, _)) in decl.params.iter().enumerate() {
             scope.push(Local {
@@ -1226,6 +1261,9 @@ impl Checker {
             self.err_hint(decl.pos, msg, "add a return type, e.g. `-> List[Int]`");
             final_ret = Ty::Error;
         }
+        self.note_fn_tail(&decl);
+        self.unit_local = saved_unit_local;
+        self.cur_fn = saved_cur_fn;
         self.tscope = saved_tscope;
         self.tbounds = saved_tbounds;
         let f = &mut self.fns[fid as usize];
@@ -1503,6 +1541,7 @@ impl Checker {
                     }
                 };
                 let never = matches!(self.resolve(&vty), Ty::Never);
+                self.note_pat(pat, ty.as_ref(), Some(init));
                 self.bind_pat(pat, v, &vty, *mutable, out);
                 never
             }
@@ -1534,6 +1573,10 @@ impl Checker {
                 pos,
             } => {
                 self.push_scope();
+                match range_end {
+                    Some(_) => self.note_pat(pat, None, None),
+                    None => self.note_pat(pat, None, Some(iter)),
+                }
                 let mut pre: Vec<TExpr> = Vec::new();
                 let node = match range_end {
                     Some((end, inclusive)) => {

@@ -1,8 +1,8 @@
-# Kilat language guide (version 0.1)
+# Kilat language guide (version 0.2.3)
 
 Kilat is a small, statically checked language for calculations and scripts.
-This guide describes what version 0.1 does. Every example below was run when the
-guide was written, and the text under "Output" is what the program printed.
+This guide describes what version 0.2.3 does. Every example below was run again with
+that version, and the text under "Output" is what the program printed.
 A longer runnable tour is in [`tests/tour.kilat`](../tests/tour.kilat).
 
 ## A first program
@@ -53,7 +53,8 @@ bracket 4 3.5 3 1024 2
 - `"..."` puts values into text with `{expr}` and `{expr:spec}`. `{{` and `}}` are literal braces.
 - `'...'` is plain text with no `{}` handling.
 - A format spec is `[<|>][width][unit][.digits]`, for example `{x:.2}`, `{p:MPa.1}`, `{n:>8}`,
-  `{a:mm^2.2}` or `{t:N*m.2}`.
+  `{a:mm^2.2}` or `{t:N*m.2}`. The width applies to the number: `{d:>10mm.2}` prints `      2.40 mm`.
+- A value with a unit needs its unit in the spec (`{gap:mm}`); see Units below.
 - Rounding is half away from zero, as on a calculator.
 - `len(s)` counts characters.
 
@@ -97,6 +98,56 @@ error: unit mismatch: cannot add m and kg
   |              ^
 ```
 
+A value with a unit is never shown without one. You say which unit you want:
+
+```kilat
+let gap = 2.4 mm
+print("gap = {gap}")
+```
+
+Kilat answers:
+
+```text
+error: this value has a unit, so say which unit to show it in
+  --> example.kilat:2:15
+  |
+2 | print("gap = {gap}")
+  |               ^
+  = hint: write `{gap:mm}`
+```
+
+With the unit named it runs:
+
+```kilat
+let gap = 2.4 mm
+print("gap = {gap:mm}")
+print("gap = {gap:um.0}")
+print("gap = {gap in mm} as a plain number")
+```
+
+Output:
+
+```text
+gap = 2.4 mm
+gap = 2400 um
+gap = 2.4 as a plain number
+```
+
+- This rule is new in 0.2.3. Older versions printed the stored SI number (`0.0024 m` for
+  `2.4 mm`, `151.84 1/s` for `1450 rpm`), which was easy to misread. A program that printed
+  a bare quantity now needs the unit written.
+- It covers every place where a value becomes text: `{x}` in a text, each argument of `print`,
+  `str(x)` and the answer of `kilat eval`. It also covers lists, structs, tuples, maps and
+  optional values that hold quantities, and generic functions and lambdas that print what
+  they are given. For a list write `gaps.map(|g| g in mm)` or print the values one by one.
+- The hint proposes a unit that the program itself wrote for that value (`mm` above).
+- The placeholder prints the unit, so `"{gap:mm} mm"` is refused as a second unit. Write
+  `{gap in mm}` when you want the plain number and your own text after it.
+- `==` and `assert_eq` compare exactly, while floats print 12 significant digits. Two
+  calculated values can therefore print the same and still differ: `1200 N / 20 mm^2 == 60 MPa`
+  is false. For calculated numbers use `approx(a, b, tolerance)`: `approx(stress, 60 MPa, 1 Pa)`
+  is true. A failed `assert_eq` whose two sides print the same says so and points to `approx`.
+
 - A quantity is a number followed by a unit on the same line: `250 N`, `5mm`, `9.81 m/s^2`.
   Inside a unit, `*`, `/` and `^` are written without spaces.
 - Units are checked when the program is checked. While it runs, a quantity is one number in SI units.
@@ -110,7 +161,8 @@ error: unit mismatch: cannot add m and kg
   - electrical `A mA uA C mAh Ah V mV kV ohm kohm Mohm F uF nF pF H mH uH S`
   - frequency `Hz kHz MHz GHz rpm`; angle `rad deg rev`; volume `L mL`; speed `mph kph knot`
   - ratios `pct ppm`; also `K` and `mol`. `celsius(25.0)` gives kelvin and `to_celsius` goes back.
-- `rpm` is an angular speed, so `60 rpm in Hz` is 6.283. Torque prints as `J` unless you ask for `{t:N*m}`.
+- `rpm` is an angular speed, so `60 rpm in Hz` is 6.283. Torque and energy have the same
+  dimension; show a torque with `{t:N*m}`.
 
 ## Functions, structs and enums
 
@@ -208,6 +260,7 @@ Output:
 
 ```text
 [24, 16, 40] 45 [5, 8, 12, 20] 20
+0.493 mm 22.2 um
 2 ["the", "quick", "fox", "and", "dog"]
 0
 1
@@ -295,7 +348,7 @@ flags: --fuel n   --mem MB   --allow-read   --allow-write
 exit codes: 0 fine, 1 error, 2 wrong usage
 ```
 
-## Known limits of version 0.1
+## Known limits of version 0.2.3
 
 - No packages, classes, traits, async or threads. No debugger and no interactive prompt.
 - Bounds on type parameters only allow passing the value to built-in functions.
@@ -303,6 +356,9 @@ exit codes: 0 fine, 1 error, 2 wrong usage
 - A name cannot be declared twice with `let` in the same block.
 - A function without a stated return type that reads a later top-level `var` needs the return type written.
 - Quantities have no fractional powers.
+- A failed `assert_eq` inside a generic function shows the stored SI numbers without units
+  (`0.0024 is not equal to 0.0025` for `2.4 mm` and `2.5 mm`).
+- After a placeholder only a repeat of the same unit is refused: `"{x:mm} m"` prints `8.0 mm m`.
 - Float overflow gives `inf`, and `inf - inf` gives `nan`. Floats print 12 significant digits.
   The last digit of a float result can differ between the native program and the browser.
 - `len(s)` and `s[i]` walk the text, and building a long text with `s = s + x` in a loop is slow.

@@ -2,4 +2,5 @@
 fn beam_deflection(load: N, length: m, modulus: Pa, inertia: m^4) -> m {
     load * length ^ 3 / (3 * modulus * inertia)
 }
-print(beam_deflection(500 N, 1.2 m, 200 GPa))
+let sag = beam_deflection(500 N, 1.2 m, 200 GPa)
+print("{sag:mm.2}")

@@ -1,0 +1,51 @@
+3 3 0 2.5 0.0 inf nan
+9223372036854775807 12.0
+2 3 -3 3 7
+2.25 2.5 2.0 3.5
+0.0 0.0
+nan 1.0 nan 1.0
+1.0 1.0 inf
+a b | é ab
+2.0 3.0
+2 -3 0 5 1000000000000000
+3 -2 0 5 -1000000000000000
+1 2 3 -1 -2 -3 0
+2 -2 0 3 -3 0
+9223372036854774784 -9223372036854775808
+[-2, 2, 0] [-1, 3] [-2, 3]
+3.0 -7.0 0.0 [1.0, 2.0]
+true false false false
+true false true false
+true false false true
+true true true false false
+true false true false false
+true true true true
+true false true true false true
+40 0 -1
+five minus one none
+2 2 2
+1.5 false 0
+40 42
+five NONE
+40 41
+b
+c
+end
+40
+40
+["y": 2]
+["y": 2]
+40 nut
+1 ["bolt": 99]
+-7 bolt
+20 20
+40 11
+83 38
+1 1 -1
+5 5
+3 1 0 5
+40 -1 [0, 9]
+true false 0.5 0.333333333333
+[1] [2, 2] []
+10 0.0 f 5
+edge cases ok
