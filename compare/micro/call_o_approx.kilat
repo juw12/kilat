@@ -1,0 +1,9 @@
+var total = 0
+var x = 0.5
+for i in 0..2000000 {
+    if approx(x, 1000.0, 0.5) {
+        total = total + 1
+    }
+    x = x + 0.25
+}
+print(total)

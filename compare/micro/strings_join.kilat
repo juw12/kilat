@@ -1,0 +1,6 @@
+var parts: List[Str] = []
+for i in 0..500000 {
+    parts.push("item {i}")
+}
+let text = join(parts, ",")
+print(len(text))

@@ -1,0 +1,19 @@
+// `kilat test` must report the same passes and the same failure from two
+// builds. The last test fails on purpose.
+fn double(n: Int) -> Int {
+    n * 2
+}
+
+test "double of a whole number" {
+    assert_eq(double(4), 8)
+}
+
+test "approx with a tolerance" {
+    assert(approx(0.1 + 0.2, 0.3, 0.001))
+}
+
+test "fails on purpose" {
+    assert_eq(double(3), 7)
+}
+
+print(double(21))

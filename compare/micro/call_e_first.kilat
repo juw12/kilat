@@ -1,0 +1,6 @@
+let items = [1, 2, 3]
+var total = 0
+for i in 0..2000000 {
+    total = total + (first(items) ?? 0)
+}
+print(total)

@@ -1,0 +1,6 @@
+let words = range(1000).map(|i| "item {i}")
+var total = 0
+for i in 0..2000000 {
+    total = total + len(min(words[i % 1000], "item 5"))
+}
+print(total)

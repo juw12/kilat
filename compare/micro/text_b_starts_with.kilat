@@ -1,0 +1,8 @@
+let words = range(1000).map(|i| "item {i}")
+var total = 0
+for i in 0..2000000 {
+    if starts_with(words[i % 1000], "item 9") {
+        total = total + 1
+    }
+}
+print(total)

@@ -1,0 +1,101 @@
+name: compare
+
+# Builds two versions of Kilat on the same machine, with the same Rust toolchain,
+# and compares them in one run: what programs print, run-time errors, the fuel
+# accounting and the speed (tests/compare_builds.py explains the rule).
+# This is a report, not a gate: differences are listed, the job stays green.
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "compare/**"
+      - "tests/compare_builds.py"
+      - ".github/workflows/compare.yml"
+  workflow_dispatch:
+    inputs:
+      before:
+        description: "Branch, tag or commit to compare against"
+        default: "main"
+      after:
+        description: "Branch, tag or commit with the change (empty: the commit this run starts on)"
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compare-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            toolchain: 1.99.1-x86_64-pc-windows-gnu
+            fallback: stable-x86_64-pc-windows-gnu
+            program: kilat.exe
+          - os: ubuntu-latest
+            toolchain: "1.99.1"
+            fallback: stable
+            program: kilat
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      BEFORE_REF: ${{ inputs.before || github.event.pull_request.base.sha }}
+      AFTER_REF: ${{ inputs.after || github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Rust toolchain (one for both builds)
+        shell: bash
+        run: |
+          if rustup toolchain install "${{ matrix.toolchain }}" --profile minimal; then
+            echo "TOOLCHAIN=${{ matrix.toolchain }}" >> "$GITHUB_ENV"
+          else
+            echo "::warning title=compare toolchain::${{ matrix.toolchain }} could not be installed, using ${{ matrix.fallback }}"
+            rustup toolchain install "${{ matrix.fallback }}" --profile minimal
+            echo "TOOLCHAIN=${{ matrix.fallback }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build both versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit_of() {
+            git rev-parse --verify --quiet "$1^{commit}" || git rev-parse --verify "origin/$1^{commit}"
+          }
+          build_side() {
+            git worktree add --detach "../$1" "$2"
+            (cd "../$1" && cargo "+$TOOLCHAIN" build --release)
+            cp "../$1/target/release/${{ matrix.program }}" "builds/$1-${{ matrix.program }}"
+          }
+          before_commit=$(commit_of "$BEFORE_REF")
+          after_commit=$(commit_of "$AFTER_REF")
+          mkdir -p builds
+          build_side before "$before_commit"
+          build_side after "$after_commit"
+          compiler=$(rustc "+$TOOLCHAIN" --version)
+          echo "::notice title=compare commits::before $before_commit, after $after_commit, both built with $compiler ($TOOLCHAIN)"
+
+      - name: Compare
+        run: python tests/compare_builds.py --before builds/before-${{ matrix.program }} --after builds/after-${{ matrix.program }} --out compare.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compare-${{ matrix.os }}
+          path: |
+            compare.json
+            builds/
