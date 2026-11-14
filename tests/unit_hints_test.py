@@ -3,8 +3,8 @@
 The rule since 0.2.3: a value with a unit never turns into text unless the program names
 the unit. `{d}`, `print(d)` and `str(d)` are refused with a hint that names a unit, and
 `{d:mm}` runs. Before 0.2.3 a bare `{d}` printed the stored SI number (`0.0024 m` for
-`2.4 mm`, `151.84 1/s` for `1450 rpm`), so a program could print a right number in a unit
-nobody asked for.
+`2.4 mm`, `151.843644924 1/s` for `1450 rpm`), so a program could print a right number
+in a unit nobody asked for.
 
 The first cases come from programs a free model really wrote (found with 0.2.1):
 

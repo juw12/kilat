@@ -39,6 +39,9 @@ jobs:
       - name: Build
         run: python build.py native wasm
 
+      - name: Cairn plugin from this build stays under Cairn's 400,000-character limit
+        run: python build.py web
+
       - name: Checks and measurements (judge.py --quick)
         run: python judge.py --quick
 

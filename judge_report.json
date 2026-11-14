@@ -1,6 +1,6 @@
 {
- "date": "2026-11-13",
- "kilat": "kilat 0.2.2",
+ "date": "2026-11-14",
+ "kilat": "kilat 0.2.3",
  "python": "CPython 3.13.2",
  "system": "Windows 10",
  "processor": "Intel(R) Core(TM) Ultra 7 258V",
@@ -9,135 +9,135 @@
   "pinned_to_fastest_cores": true,
   "cpu_time_from": "QueryProcessCycleTime",
   "startup": {
-   "kilat_cpu": 0.006410908540278619,
-   "python_cpu": 0.08060145972138098,
-   "kilat_wall": 0.018386300012934953,
-   "python_wall": 0.11336329999903683
+   "kilat_cpu": 0.005810616596002423,
+   "python_cpu": 0.07392425984251969,
+   "kilat_wall": 0.014803900005063042,
+   "python_wall": 0.11570140000549145
   },
   "benchmarks": [
    {
     "name": "collatz",
     "same_output": true,
-    "kilat_cpu": 0.31205456692913386,
-    "kilat_cpu_median": 0.31410594488188975,
-    "python_cpu": 0.9908639527559056,
-    "python_cpu_median": 0.9999039267110842,
-    "kilat_wall": 0.4559130000125151,
-    "python_wall": 2.5719349999999395,
-    "ratio": 3.175290663125998,
-    "ratio_net": 2.9781821675372133
+    "kilat_cpu": 0.22371437674136888,
+    "kilat_cpu_median": 0.22540865657177467,
+    "python_cpu": 0.6486450018170805,
+    "python_cpu_median": 0.7900123700787401,
+    "kilat_wall": 0.3271291999844834,
+    "python_wall": 1.4598417999804951,
+    "ratio": 2.8994336942724264,
+    "ratio_net": 2.637498047721421
    },
    {
     "name": "fib",
     "same_output": true,
-    "kilat_cpu": 0.11017808419139916,
-    "kilat_cpu_median": 0.1150504221683828,
-    "python_cpu": 0.3869022156268928,
-    "python_cpu_median": 0.3878479273167777,
-    "kilat_wall": 0.24708410000312142,
-    "python_wall": 0.5735678000055486,
-    "ratio": 3.511607761801104,
-    "ratio_net": 2.951807775277
+    "kilat_cpu": 0.08795870018170805,
+    "kilat_cpu_median": 0.08992221320411872,
+    "python_cpu": 0.2444510502725621,
+    "python_cpu_median": 0.27897059297395516,
+    "kilat_wall": 0.1803897999925539,
+    "python_wall": 3.390215099992929,
+    "ratio": 2.779157147247138,
+    "ratio_net": 2.075846239944608
    },
    {
     "name": "loop_sum",
     "same_output": true,
-    "kilat_cpu": 0.17660894245911568,
-    "kilat_cpu_median": 0.1788387910357359,
-    "python_cpu": 0.6905148437310721,
-    "python_cpu_median": 0.7008724651726227,
-    "kilat_wall": 0.25160619999223854,
-    "python_wall": 1.2057432000001427,
-    "ratio": 3.9098520953485902,
-    "ratio_net": 3.5835512900257274
+    "kilat_cpu": 0.11874375166565718,
+    "kilat_cpu_median": 0.12044397577225924,
+    "python_cpu": 0.4403552156268928,
+    "python_cpu_median": 0.564872156268928,
+    "kilat_wall": 0.22128639998845756,
+    "python_wall": 7.220595099992352,
+    "ratio": 3.708449576924151,
+    "ratio_net": 3.2446717746599907
    },
    {
     "name": "mandelbrot",
     "same_output": true,
-    "kilat_cpu": 0.20631977528770443,
-    "kilat_cpu_median": 0.21094697637795276,
-    "python_cpu": 0.8650204342822532,
-    "python_cpu_median": 0.8880190345245306,
-    "kilat_wall": 0.3223009000066668,
-    "python_wall": 1.8655242999957409,
-    "ratio": 4.192620087318425,
-    "ratio_net": 3.923882853840314
+    "kilat_cpu": 0.15358231253785584,
+    "kilat_cpu_median": 0.16168137674136887,
+    "python_cpu": 0.5387635578437311,
+    "python_cpu_median": 0.5689390714718352,
+    "kilat_wall": 0.20603359999950044,
+    "python_wall": 0.6278869999805465,
+    "ratio": 3.507979199824417,
+    "ratio_net": 3.1456585446790886
    },
    {
     "name": "map_count",
     "same_output": true,
-    "kilat_cpu": 0.2603929424591157,
-    "kilat_cpu_median": 0.2645217758933979,
-    "python_cpu": 0.34862581405208964,
-    "python_cpu_median": 0.35468872864930345,
-    "kilat_wall": 0.48327089998929296,
-    "python_wall": 0.7865262999985134,
-    "ratio": 1.3388450960295415,
-    "ratio_net": 1.0552886367401835
+    "kilat_cpu": 0.11742493155663235,
+    "kilat_cpu_median": 0.12321763234403392,
+    "python_cpu": 0.22887119866747427,
+    "python_cpu_median": 0.276588666262871,
+    "kilat_wall": 0.14856179998605512,
+    "python_wall": 8.387354699982097,
+    "ratio": 1.9490852209446934,
+    "ratio_net": 1.388235361025237
    },
    {
     "name": "matmul",
     "same_output": true,
-    "kilat_cpu": 0.11020760024227741,
-    "kilat_cpu_median": 0.11214897516656572,
-    "python_cpu": 0.30033819321623256,
-    "python_cpu_median": 0.3065085935796487,
-    "kilat_wall": 0.21561790000123437,
-    "python_wall": 0.5905092999892076,
-    "ratio": 2.725204001865363,
-    "ratio_net": 2.1169916872275434
+    "kilat_cpu": 0.08101568927922471,
+    "kilat_cpu_median": 0.08526836644457904,
+    "python_cpu": 0.27065733131435493,
+    "python_cpu_median": 0.29093380557238036,
+    "kilat_wall": 0.1589162000163924,
+    "python_wall": 1.6774601000070106,
+    "ratio": 3.3408014388610656,
+    "ratio_net": 2.615954808002266
    },
    {
     "name": "nbody",
     "same_output": true,
-    "kilat_cpu": 0.20347378982434888,
-    "kilat_cpu_median": 0.2063172634766808,
-    "python_cpu": 0.7579543525136281,
-    "python_cpu_median": 0.7761988831011508,
-    "kilat_wall": 0.3359186000016052,
-    "python_wall": 1.4270687000098405,
-    "ratio": 3.725071190584011,
-    "ratio_net": 3.437242409014759
+    "kilat_cpu": 0.160403634766808,
+    "kilat_cpu_median": 0.16499853846153847,
+    "python_cpu": 0.4832531350696548,
+    "python_cpu_median": 0.6334824591156875,
+    "kilat_wall": 0.3744454000261612,
+    "python_wall": 1.1029146000219043,
+    "ratio": 3.0127318235163423,
+    "ratio_net": 2.6477837102247332
    },
    {
     "name": "sieve",
     "same_output": true,
-    "kilat_cpu": 0.12270659418534222,
-    "kilat_cpu_median": 0.12571529981829194,
-    "python_cpu": 0.31280651968503936,
-    "python_cpu_median": 0.3319446638400969,
-    "kilat_wall": 0.26138429999991786,
-    "python_wall": 0.40896269999211654,
-    "ratio": 2.549223387396448,
-    "ratio_net": 1.9966781972665104
+    "kilat_cpu": 0.13227208782556027,
+    "kilat_cpu_median": 0.14486255602665052,
+    "python_cpu": 0.22066162023016353,
+    "python_cpu_median": 0.30679880133252574,
+    "kilat_wall": 0.18739790000836365,
+    "python_wall": 6.115577400021721,
+    "ratio": 1.6682402452221885,
+    "ratio_net": 1.1603325420853314
    },
    {
     "name": "sort",
     "same_output": true,
-    "kilat_cpu": 0.09269978497880073,
-    "kilat_cpu_median": 0.09706417928528165,
-    "python_cpu": 0.6381892422774076,
-    "python_cpu_median": 0.6543634112658995,
-    "kilat_wall": 0.1485398999939207,
-    "python_wall": 0.679487400004291,
-    "ratio": 6.884473814295831,
-    "ratio_net": 6.461873251453087
+    "kilat_cpu": 0.05574057177468201,
+    "kilat_cpu_median": 0.05652145972138098,
+    "python_cpu": 0.5536698479709267,
+    "python_cpu_median": 0.7877011465778316,
+    "kilat_wall": 0.10938789998181164,
+    "python_wall": 13.3327117000008,
+    "ratio": 9.932977548364684,
+    "ratio_net": 9.608372096702011
    },
    {
     "name": "strings",
     "same_output": true,
-    "kilat_cpu": 0.13722510296789825,
-    "kilat_cpu_median": 0.13774226892792246,
-    "python_cpu": 0.19844575529981828,
-    "python_cpu_median": 0.2023080030284676,
-    "kilat_wall": 0.17333019999205135,
-    "python_wall": 0.24876649999350775,
-    "ratio": 1.4461330398581786,
-    "ratio_net": 0.9008525114118356
+    "kilat_cpu": 0.10628644942459116,
+    "kilat_cpu_median": 0.10841604663840097,
+    "python_cpu": 0.22588164324651727,
+    "python_cpu_median": 0.23076064324651727,
+    "kilat_wall": 0.1449049999937415,
+    "python_wall": 0.3790253000042867,
+    "ratio": 2.125215815086356,
+    "ratio_net": 1.5123774456613472
    }
   ],
-  "geometric_mean": 3.0197334856442883,
-  "geometric_mean_net": 2.5366992292836956,
+  "geometric_mean": 3.061863832830328,
+  "geometric_mean_net": 2.487217703001139,
   "faster": [
    "collatz",
    "fib",
@@ -147,27 +147,34 @@
    "matmul",
    "nbody",
    "sieve",
-   "sort"
-  ],
-  "slower": [
+   "sort",
    "strings"
   ],
+  "slower": [],
   "outputs_match": true
  },
+ "speed_reused_from": null,
  "sizes": {
   "bytes": {
-   "kilat program": 1282048,
-   "kilat library": 1728512,
-   "docs/kilat.wasm": 728823,
+   "kilat program": 1362944,
+   "kilat library": 1810944,
+   "docs/kilat.wasm": 786285,
    "docs/kilat.js": 16007,
-   "main.js (Cairn plugin)": 365625
+   "main.js (Cairn plugin)": 392381
   },
   "needs": {
    "kilat program": [
     "api-ms-win-core-synch-l1-2-0.dll",
+    "api-ms-win-crt-environment-l1-1-0.dll",
+    "api-ms-win-crt-heap-l1-1-0.dll",
+    "api-ms-win-crt-locale-l1-1-0.dll",
+    "api-ms-win-crt-math-l1-1-0.dll",
+    "api-ms-win-crt-private-l1-1-0.dll",
+    "api-ms-win-crt-runtime-l1-1-0.dll",
+    "api-ms-win-crt-stdio-l1-1-0.dll",
+    "api-ms-win-crt-string-l1-1-0.dll",
     "bcryptprimitives.dll",
     "kernel32.dll",
-    "msvcrt.dll",
     "ntdll.dll"
    ],
    "kilat library": [
@@ -407,6 +414,10 @@
    true
   ],
   [
+   "tests/builtins_edge.kilat",
+   true
+  ],
+  [
    "tests/json.kilat",
    true
   ],
@@ -430,6 +441,10 @@
  "library_agrees": [
   [
    "tests/builtins.kilat",
+   true
+  ],
+  [
+   "tests/builtins_edge.kilat",
    true
   ],
   [
@@ -545,6 +560,10 @@
   "web": [
    [
     "tests/builtins.kilat",
+    true
+   ],
+   [
+    "tests/builtins_edge.kilat",
     true
    ],
    [
@@ -701,6 +720,10 @@
    ],
    [
     "worker: tests/builtins.kilat",
+    true
+   ],
+   [
+    "worker: tests/builtins_edge.kilat",
     true
    ],
    [
@@ -1044,6 +1067,10 @@
     true
    ],
    [
+    "tests/builtins_edge.kilat",
+    true
+   ],
+   [
     "tests/json.kilat",
     true
    ],
@@ -1086,17 +1113,21 @@
   ],
   "failures": [],
   "timings": {
-   "playgroundLongestFreezeMs": 97,
-   "playgroundLimitMs": 135,
-   "pluginCharacters": 365625,
-   "pluginFirstResultMs": 104,
-   "pluginReadyMs": 4514,
-   "pluginLimitMs": 57,
+   "playgroundLongestFreezeMs": 101,
+   "playgroundLimitMs": 100,
+   "pluginCharacters": 392381,
+   "pluginFirstResultMs": 59,
+   "pluginReadyMs": 286,
+   "pluginLimitMs": 53,
    "pluginRedrawMs": 16,
-   "pluginLongestFreezeMs": 200,
-   "pluginLongTextLimitMs": 4117,
-   "pluginTimeLimitMs": 10070
+   "pluginLongestFreezeMs": 143,
+   "pluginLongTextLimitMs": 2802,
+   "pluginTimeLimitMs": 10050
   }
  },
+ "stalls": [
+  "python.exe kilat.py builtins_edge.kilat (limit 120 s)",
+  "python.exe kilat.py builtins_edge.kilat (limit 120 s)"
+ ],
  "failures": []
 }

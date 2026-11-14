@@ -2,12 +2,16 @@
 
     python judge.py            every section (several minutes; opens a headless browser)
     python judge.py --quick    fewer timing runs, and no browser sections
+    python judge.py --reuse-timing
+                               after a start that stopped in a later section: take the speed
+                               section it kept, if the program, Python and bench/ are unchanged
 
 It writes judge_report.json (everything measured) and RESULTS.md (the tables).
 The exit code is 0 when every correctness check passes. Speed is reported, not judged.
 """
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import math
@@ -25,6 +29,7 @@ ROOT = Path(__file__).resolve().parent
 WORK = ROOT / "judge_work"
 WINDOWS = sys.platform == "win32"
 SPEED_TARGET = 5.0  # geometric mean over CPython, set before anything was measured
+STALLS = []  # helper programs that hit their time limit and were started again
 
 if WINDOWS:
     import ctypes
@@ -136,9 +141,23 @@ def run_measured(command, cwd, cycles_per_second):
     return cpu, wall, printed.decode("utf-8", "replace").replace("\r\n", "\n"), process.returncode
 
 
-def run_quiet(command, cwd=ROOT, timeout=120):
-    """Runs a command; returns (exit code, printed text, error text)."""
-    finished = subprocess.run(command, cwd=cwd, capture_output=True, timeout=timeout)
+def run_quiet(command, cwd=ROOT, timeout=120, tries=3):
+    """Runs a command; returns (exit code, printed text, error text).
+
+    A helper that does not finish within its time limit is started again, up to `tries` times,
+    and noted in STALLS, so one stall on a busy PC cannot end the whole run unseen.
+    The last timeout is still raised.
+    """
+    for attempt in range(1, tries + 1):
+        try:
+            finished = subprocess.run(command, cwd=cwd, capture_output=True, timeout=timeout)
+            break
+        except subprocess.TimeoutExpired:
+            what = " ".join(Path(str(part)).name for part in command)
+            STALLS.append(f"{what} (limit {timeout} s)")
+            print(f"stalled, try {attempt} of {tries}: {what}", file=sys.stderr, flush=True)
+            if attempt == tries:
+                raise
     decode = lambda raw: raw.decode("utf-8", "replace").replace("\r\n", "\n")
     return finished.returncode, decode(finished.stdout), decode(finished.stderr)
 
@@ -211,6 +230,35 @@ def measure_speed(runs, cycles_per_second):
         "slower": [row["name"] for row in rows if row["ratio_net"] and row["ratio_net"] < 0.95],
         "outputs_match": all(row["same_output"] for row in rows),
     }
+
+
+def timing_identity(runs):
+    """What a kept speed section belongs to: the program, this Python, the bench files, the run count."""
+    digest = hashlib.sha256()
+    for path in [kilat_program(), *sorted((ROOT / "bench").iterdir())]:
+        if path.is_file():
+            digest.update(path.name.encode("utf-8"))
+            digest.update(path.read_bytes())
+    return {"files": digest.hexdigest(), "python": sys.version, "runs": runs}
+
+
+def speed_section(runs, cycles_per_second, reuse):
+    """The speed section, and when it was measured if an earlier start measured it.
+
+    Timing is most of a run, so it is kept in judge_work/ as soon as it is done. A start that
+    stops in a later section then loses nothing: --reuse-timing takes the kept section back,
+    but only if timing_identity() is the same as when it was measured.
+    """
+    kept_path = WORK / "timing_kept.json"
+    identity = timing_identity(runs)
+    if reuse and kept_path.is_file():
+        kept = json.loads(kept_path.read_text(encoding="utf-8"))
+        if kept["identity"] == identity:
+            return kept["speed"], kept["measured"]
+    speed = measure_speed(runs, cycles_per_second)
+    kept = {"identity": identity, "measured": time.strftime("%Y-%m-%d %H:%M"), "speed": speed}
+    kept_path.write_text(json.dumps(kept, indent=1), encoding="utf-8", newline="\n")
+    return speed, None
 
 
 def pe_imports(path):
@@ -316,7 +364,7 @@ def measure_bugs():
             compiles = True
         except py_compile.PyCompileError:
             compiles = False
-        twin_code, _, _ = run_quiet([sys.executable, f"{name}.py"], folder, timeout=60)
+        twin_code, _, _ = run_quiet([sys.executable, f"{name}.py"], folder, timeout=300)
         mypy = None
         if have_mypy:
             mypy_code, _, _ = run_quiet(
@@ -512,6 +560,13 @@ def write_results(report):
         f"- The two languages print the same text on every program: {'yes' if speed['outputs_match'] else 'NO'}.",
         f"- Start-up: Kilat {start['kilat_cpu'] * 1000:.0f} ms of CPU ({start['kilat_wall'] * 1000:.0f} ms wall), "
         f"CPython {start['python_cpu'] * 1000:.0f} ms ({start['python_wall'] * 1000:.0f} ms wall).",
+    ]
+    if report.get("speed_reused_from"):
+        lines.append(
+            f"- This section was measured on {report['speed_reused_from']} by an earlier start of this script, "
+            "which stopped in a later section. Everything below is from the later start."
+        )
+    lines += [
         "",
         "## Sizes",
         "",
@@ -573,6 +628,12 @@ def write_results(report):
     if browser and "timings" in browser:
         lines += ["", "Times seen in the browser checks, in milliseconds unless the name says otherwise:", ""]
         lines += [f"- `{name}`: {value}" for name, value in sorted(browser["timings"].items())]
+    if report.get("stalls"):
+        lines += [
+            "",
+            f"Helper programs that did not finish within their time limit and were started again "
+            f"({len(report['stalls'])}): {'; '.join(report['stalls'])}.",
+        ]
     lines.append("")
     (ROOT / "RESULTS.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
@@ -581,6 +642,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--quick", action="store_true", help="fewer timing runs and no browser sections")
     parser.add_argument("--runs", type=int, default=0, help="timing runs per program (default 5, or 2 with --quick)")
+    parser.add_argument(
+        "--reuse-timing",
+        action="store_true",
+        help="take the speed section kept by an earlier start that stopped in a later section",
+    )
     options = parser.parse_args()
     if not kilat_program().is_file():
         print("build Kilat first: python build.py")
@@ -588,13 +654,22 @@ def main():
     runs = options.runs or (2 if options.quick else 5)
     name, cycles_per_second = processor()
     claims, observations = check_claims()
+    speed, speed_reused_from = speed_section(runs, cycles_per_second, options.reuse_timing)
+    timing_state = f"reused from {speed_reused_from}" if speed_reused_from else "done"
+    print(
+        f"timing {timing_state}: {speed['geometric_mean']:.2f} times CPython (whole process), "
+        f"{speed['geometric_mean_net']:.2f} net of start-up; the other checks follow",
+        file=sys.stderr,
+        flush=True,
+    )
     report = {
         "date": time.strftime("%Y-%m-%d"),
         "kilat": run_quiet([str(kilat_program()), "version"])[1].strip(),
         "python": f"{platform.python_implementation()} {platform.python_version()}",
         "system": f"{platform.system()} {platform.release()}",
         "processor": name,
-        "speed": measure_speed(runs, cycles_per_second),
+        "speed": speed,
+        "speed_reused_from": speed_reused_from,
         "sizes": measure_sizes(),
         "bugs": measure_bugs(),
         "conformance": check_conformance(),
@@ -603,6 +678,7 @@ def main():
         "claims": claims,
         "observations": observations,
         "browser": None if options.quick else check_browser(),
+        "stalls": STALLS,
     }
     failures = []
     for section in ("conformance", "library_agrees", "sandbox"):
@@ -626,6 +702,8 @@ def main():
     speed = report["speed"]
     print(f"speed: {speed['geometric_mean']:.2f} times CPython (whole process), {speed['geometric_mean_net']:.2f} net of start-up")
     print(f"bugs refused before running: Kilat {bugs['kilat_refuses']}/{bugs['total']}, mypy --strict {bugs['mypy_strict_catches']}")
+    if STALLS:
+        print(f"helpers started again after a stall: {len(STALLS)} ({'; '.join(STALLS)})")
     for failure in failures:
         print(f"FAIL  {failure}")
     print("every check passed" if not failures else f"{len(failures)} checks failed")

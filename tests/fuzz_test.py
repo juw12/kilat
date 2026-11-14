@@ -524,9 +524,13 @@ def run_case(kilat, case, unit_known):
         time.sleep(3600)
     for unit in case.get("units", []):
         if unit not in unit_known:
-            unit_known[unit] = kilat.check("print(1 %s)" % unit).ok
+            # Since 0.2.3 a bare `print(1 mm)` is refused: a value with a unit is
+            # only shown in a named unit. So the probe names the unit. A unit that
+            # is missing is a fault in the language or in this test's table, and
+            # counts as a failure; it used to be skipped, which hid 900 cases.
+            unit_known[unit] = kilat.check("print((1 %s) in %s)" % (unit, unit)).ok
         if not unit_known[unit]:
-            return {"skip": "unit %s is not built in" % unit}
+            return {"fail": "unit %s is not built in" % unit}
     checked = kilat.check(source)
     first = kilat.run(source, fuel=FUEL, mem_mb=MEMORY_MB, seed=1)
     report = {"kind": first.kind, "check_ok": bool(checked.ok)}
@@ -550,6 +554,8 @@ def run_case(kilat, case, unit_known):
     elif category == "refusal":
         if checked.ok:
             problems.append("mixed dimensions were accepted")
+        elif "unit mismatch" not in (checked.error or ""):
+            problems.append("refused, but not for the units: " + (checked.error or "")[:160])
     else:
         expected = case["expected"]
         if expected["type"] == "skip":
@@ -706,6 +712,7 @@ def summarise(cases, reports, restarts, arguments, elapsed):
     kinds = {}
     failures = []
     skipped = 0
+    skipped_by_category = {}
     refused_as_expected = 0
     longest = 0.0
     for index, case in enumerate(cases):
@@ -720,6 +727,7 @@ def summarise(cases, reports, restarts, arguments, elapsed):
             kinds[label] = kinds.get(label, 0) + 1
         if "skip" in report:
             skipped += 1
+            skipped_by_category[category] = skipped_by_category.get(category, 0) + 1
         if case.get("expected", {}).get("type") == "error" and "fail" not in report:
             refused_as_expected += 1
         if "fail" in report:
@@ -738,6 +746,7 @@ def summarise(cases, reports, restarts, arguments, elapsed):
         "run_outcomes": kinds,
         "diff_cases_refused_as_expected": refused_as_expected,
         "skipped": skipped,
+        "skipped_by_category": skipped_by_category,
         "failures": len(failures),
         "failure_list": failures[:60],
         "worker_restarts": restarts,
@@ -777,6 +786,11 @@ def main():
     reports, restarts, errors_text = run_shards(cases, arguments.jobs, arguments.hang_seconds)
     summary = summarise(cases, reports, restarts, arguments, time.monotonic() - began)
     summary["jobs"] = arguments.jobs
+    summary["categories_skipped_entirely"] = sorted(
+        category
+        for category, count in summary["by_category"].items()
+        if summary["skipped_by_category"].get(category, 0) == count
+    )
     if errors_text.strip():
         summary["worker_error_tail"] = errors_text[-600:]
     if arguments.selftest:
@@ -795,6 +809,9 @@ def main():
         print("    " + item["source"][:200].replace("\n", "\\n"))
     if arguments.selftest:
         return 0 if summary["selftest_passed"] else 1
+    if summary["categories_skipped_entirely"]:
+        print("FAIL: every case was skipped in: " + ", ".join(summary["categories_skipped_entirely"]))
+        return 1
     return 0 if summary["failures"] == 0 else 1
 
 
