@@ -51,7 +51,7 @@ on every measured program, safer than Python on the bug set, and one click to in
 |---|---|---|---|---|---|---|
 | 0 | baseline 0.1.0 (94f3e63) | 5/5 | 5.15 (self) | - | baseline | council also scored 5.15; slower than CPython net of start-up on 2 of 10 programs |
 | 1 | 0.2.0 (11a0d2a): faster engine, mean / median / stddev, worker mode, release download, fuzz and differential test, Cairn and Glow pull requests | 5/5 | 7.05 (self) | yes (self) | kept | gain 1.90; no engine rebuild after 0.2.0, so G1 to G4 were last run on the same binaries; G5 holds because files were only added |
-| 8 | 0.2.3 (858dc6b; docs and checks up to 0fc6052): unit rule (a breaking change), speed work, release and real install, Cairn catalogue and GlowCode on 0.2.3, live checks of both apps, docs | 5/5 | 7.34 (council, 3 judges, mean of 4 runs) | - | kept | council v0 was 5.15, so the gain is 2.19 council to council; below DONE_SCORE 8.5; G5: `bench` and `examples` unchanged since v0, the 10 changed bug files read, `tests` by counts only; rounds 2 to 7 have no row here (0.2.1 was 7.61 self-judged, not comparable) |
+| 8 | 0.2.3 (858dc6b; docs and checks up to 0fc6052): unit rule (a breaking change), speed work, release and real install, Cairn catalogue and GlowCode on 0.2.3, live checks of both apps, docs | 5/5 | 7.34 (council, 3 judges, mean of 4 runs) | - | kept | council v0 was 5.15, so the gain is 2.19 council to council; below DONE_SCORE 8.5; G5: `bench` and `examples` unchanged since v0, the 10 changed bug files read, the 24 lines removed from `tests` read; rounds 2 to 7 have no row here (0.2.1 was 7.61 self-judged, not comparable) |
 
 Self-judge scores per criterion (rubric kilat-r2, weights 0.30 / 0.20 / 0.25 / 0.15 / 0.10):
 
@@ -465,9 +465,10 @@ Gates for v8 (from `judge_report.json` of judge run 3 and from git):
 | G2 same printed text in Kilat and CPython | true for every benchmark | pass |
 | G3 20 of 20 bugs refused before running | 20 of 20; all 20 fixed versions run; mypy --strict catches 14 | pass |
 | G4 program at most 1.5 MB, plugin `main.js` at most 400,000 characters | 1,362,944 bytes (CI builds 1,490,432 and 1,490,656); 392,381 | pass |
-| G5 no test, benchmark or bug file deleted or weakened since v0 | nothing deleted since `94f3e63`; tracked files `tests` 15 -> 28, `bench` 20 -> 20, `bugs` 61 -> 61, `examples` 5 -> 5; `bench` and `examples`: no file differs; `bugs`: 10 files differ (+14 -10 lines), all read; `tests`: 13 files added, 7 changed (+3604 -24 lines) | pass; `tests` by counts only |
+| G5 no test, benchmark or bug file deleted or weakened since v0 | nothing deleted since `94f3e63`; tracked files `tests` 15 -> 28, `bench` 20 -> 20, `bugs` 61 -> 61, `examples` 5 -> 5; `bench` and `examples`: no file differs; `bugs`: 10 files differ (+14 -10 lines), all read; `tests`: 13 files added, 7 changed (+3604 -24 lines) | pass; the 24 lines removed from `tests` read, no check dropped |
 
 - G5 detail (the diff from `94f3e63` to `0fc6052`, read on 2026-11-16): `bench` and `examples` have no changed file. The 10 changed bug files are 5 bugs and their fixed versions (`name_typo_in_variable`, `name_wrong_field`, `type_wrong_argument_count`, `units_add_length_to_mass`, `units_plain_number_as_speed`). Only their print lines changed, to name the unit: `print(radius)` became `print("{radius:mm}")`. Each bug itself is kept: the misspelled field `p.mas`, the call with a missing argument and the plain `90` are still there, moved into a placeholder or a `let` line. In `tests`, 7 older files changed (`builtins.kilat`, `builtins.out`, `tour.kilat`, `units.kilat`, `units.out`, `web_runner.html`, `web_test.py`); their 24 removed lines were not read one by one, so "not weakened" is not fully checked there.
+- G5 for `tests`, read later on 2026-11-16; this replaces any words above that say these lines were not read. The 24 removed lines are in 19 places in 5 files, and each was read with the lines that replaced it. `tests/tour.kilat` (1 line) and `tests/units.kilat` (6 lines): the print lines now name the unit, which the 0.2.3 rule requires; the same quantities are printed. `tests/units.out` (2 lines): every value expected before is still expected; `20.0 EUR`, `1.0 N*m`, `4.0 Hz` and four new lines are added. `tests/web_runner.html` (5 lines): the same `check` or `run` call is still made, now with a timer around it and an option to run in a worker. `tests/web_test.py` (10 lines): the browser's error text is kept in a file, and `run_checks` now runs every case on the page and again in a worker. No check was dropped. `tests/builtins.kilat` and `tests/builtins.out` only gained lines.
 - The 5 changed bugs with the installed 0.2.3 (run on 2026-11-16): each buggy file is refused (exit code not 0) and each fixed file runs (exit 0). First lines of the refusals:
 
 ```text
@@ -526,7 +527,6 @@ Mistakes and trouble in this round:
 - Model reliability on independent answers. The sample is mostly replays and its check reads numbers only.
 - The causes of four things: the low Linux CI report (2.78), the Linux `nbody` and `loop_sum` slowdown, the low `sieve` figure on my PC, and the red `verify_review.py` run.
 - The words "numbers not in the prompt" in the 0.2.2 held-out row of RESULTS were not rechecked in this round.
-- G5 for `tests`: the 24 lines removed from older test files since v0 were not read one by one.
 - Kilat has not been shown to beat Python overall. It is about 3 times faster on these 10 small programs and refuses these 20 bugs before running; Python's libraries, tools and users are not matched.
 
 ### Known routes not taken in this round
@@ -537,6 +537,13 @@ Mistakes and trouble in this round:
 - Tools: the push helper's 90 s limit against the proxy's worst case of about 285 s; `cairn_catalogue_install.py` is hard-coded to 0.2.1; the catalogue version and the GlowCode prompt are kept by hand; the rig cuts each browser line at about 300 characters; `apps.yml` is not parsed locally; the council launch has no progress output.
 - Language: a clearer hint for `N.m.1` and `m/s:.2`; name the line where a unit was lost; the ratio hint led a model to `kN/kN`; say that `x in mL / 1000` needs brackets; say that dividing by a quantity gives a plain number; `{x:mm} m` prints `8.0 mm m`.
 - Page: not tried at phone width or offline.
+
+### Close-out notes (2026-11-16, third log commit)
+
+- G5 for `tests` is now read line by line (see the gate detail above), so it is off the "Still not verified" list.
+- Mistakes during the close-out: (1) the first log commit said G5 was checked by counts only, and two more log commits were needed after the diff was read, first `bugs`, then `tests`; (2) one check of `main` through the GitHub API ran before the push had landed and showed the old head, so it was repeated; (3) my first reading of "12 of the 61 Kilat program files" was wrong (I counted the files that differ between two commits), and the README sentence was left as it is; (4) three of my tool calls stopped on errors of my own (a 10 s git time limit, a variable that was then missing, a helper whose source could not be read) and were repeated.
+- Branches: the work branches `round8-0.2.3` (`858dc6b`) and `round8-speed` (`fe73fa1`) were deleted from GitHub on 2026-11-16. Both commits are in the history of `main`, so either branch can be made again from its commit.
+- The PC was still saturated at 13:09 UTC (processor 91.5 %, queue 162), so the full Cairn test suite on Windows was again not run.
 
 ## Handoff
 
