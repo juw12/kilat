@@ -71,6 +71,17 @@ jobs:
         shell: bash
         run: git -C cairn-checkout rev-parse HEAD | tee cairn_commit.txt
 
+      # On GitHub's Linux runner Edge ended at once with "The SUID sandbox helper binary was
+      # found, but is not configured correctly". Chromium turns to that helper only when it
+      # may not create a user namespace, which Ubuntu refuses by default. This lifts the
+      # refusal on this one throwaway runner, so the browser keeps its own sandbox.
+      - name: Let the browser build its sandbox (Linux runner only)
+        if: runner.os == 'Linux'
+        run: |
+          sysctl kernel.apparmor_restrict_unprivileged_userns || true
+          ls -l /opt/microsoft/msedge/msedge-sandbox || true
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || echo "not changed"
+
       - name: The Kilat plugin installed in Cairn's web app
         run: python tests/cairn_app_test.py cairn-checkout
 
