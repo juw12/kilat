@@ -1,0 +1,118 @@
+name: apps
+
+# Checks of the two apps that ship Kilat: the GlowCode page of the Glow AI app and the Kilat
+# plugin in Cairn. They open live pages, ask free models and read another repository, so they
+# run only when started by hand (Actions > apps > Run workflow), never on a push.
+# The two model samples are measurements of a small sample, not pass / fail tests.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_model_sample:
+        description: Also ask the free models on the live GlowCode page (one to three hours)
+        type: boolean
+        default: true
+      repeats:
+        description: How often each task is asked
+        default: "3"
+      pause:
+        description: Seconds to wait between two requests to the models
+        default: "45"
+
+permissions:
+  contents: read
+
+jobs:
+  glowcode-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Playwright and its browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: The live GlowCode page in a real browser (5 examples, 4 typed programs)
+        run: python tests/glowcode_live_test.py glowcode_live_report.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glowcode-live
+          path: glowcode_live_report.json
+
+  cairn-plugin:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cairn's current main
+        uses: actions/checkout@v4
+        with:
+          repository: juw12/cairn
+          path: cairn-checkout
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Which Cairn commit this is
+        shell: bash
+        run: git -C cairn-checkout rev-parse HEAD | tee cairn_commit.txt
+
+      - name: The Kilat plugin installed in Cairn's web app
+        run: python tests/cairn_app_test.py cairn-checkout
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cairn-plugin-${{ matrix.os }}
+          path: |
+            judge_work/cairn_app_report.json
+            cairn_commit.txt
+
+  model-sample:
+    if: ${{ inputs.run_model_sample }}
+    strategy:
+      fail-fast: false
+      # One sample at a time, so the two do not compete for the same free models.
+      max-parallel: 1
+      matrix:
+        set: [main, heldout]
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      KILAT_SAMPLE_SET: ${{ matrix.set }}
+      KILAT_SAMPLE_REPEATS: ${{ inputs.repeats }}
+      KILAT_SAMPLE_PAUSE: ${{ inputs.pause }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Playwright and its browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Free models on the live GlowCode page (a measurement, not a test)
+        run: python tests/glowcode_model_sample.py model_sample_${{ matrix.set }}.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: model-sample-${{ matrix.set }}
+          path: model_sample_${{ matrix.set }}.json

@@ -249,7 +249,7 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
 - GlowCode, a Glow page where a person or a model writes Kilat and the checker refuses a wrong
   program before it runs. It is merged into Glow and live at
   https://juw12.github.io/projects/glow/code/ (https://github.com/juw12/projects/pull/53).
-  The page ships the 0.2.2 web engine (https://github.com/juw12/projects/pull/55).
+  The page ships the 0.2.3 web engine (https://github.com/juw12/projects/pull/80).
 
 ## Where Kilat is behind
 
@@ -262,7 +262,7 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
 - The web engine runs on the page's main thread by default and gives the page a turn every 40 ms.
   Worker mode keeps the page smooth and stops at once, but the same program took 1.5 to 2.5 times
   longer in headless Edge. That figure comes from a separate probe page run by hand, not from `judge.py`.
-- The Cairn plugin was tested in Cairn's real web app with its demo brain in headless Edge: 8 of 8 checks (`python tests/cairn_app_test.py <cairn checkout>`; run once with the 0.2.3 plugin, twice in a row with 0.2.2). A note shows a kilat block's result in Split and Preview modes, not in Write mode. The catalogue entry is merged (https://github.com/juw12/cairn/pull/35) and lists version 0.2.2 (https://github.com/juw12/cairn/pull/40). Cairn's in-app install from GitHub and Cairn's desktop build were not tested.
+- The Cairn plugin was tested in Cairn's real web app with its demo brain in headless Edge: 8 of 8 checks (`python tests/cairn_app_test.py <cairn checkout>`; run once with the 0.2.3 plugin, twice in a row with 0.2.2). A note shows a kilat block's result in Split and Preview modes, not in Write mode. The catalogue entry is merged (https://github.com/juw12/cairn/pull/35) and lists version 0.2.3 (https://github.com/juw12/cairn/pull/42). Cairn's in-app install from GitHub and Cairn's desktop build were not tested.
   It needs `DecompressionStream`. It keeps the result
   of each program text, so `rand()` and `clock()` stay the same until the blocks are run again.
   A block is stopped after 10 seconds.
