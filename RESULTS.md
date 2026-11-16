@@ -104,14 +104,21 @@ Helper programs that did not finish within their time limit and were started aga
 Added after the run by a separate script (not by `judge.py`), so rerunning `judge.py` drops this section
 and the ones below. Every figure here is read from a file saved during the work.
 
-- The program measured is the file built for the 0.2.3 release: `kilat.exe`, 1,362,944 bytes, SHA-256
+- The program measured is the `kilat.exe` of the 0.2.3 release (published 2026-11-16,
+  https://github.com/juw12/kilat/releases/tag/v0.2.3): 1,362,944 bytes, SHA-256
   `db646696dc987dff95ebc9b64df5de275e0311cd8170479582aba07d0a0fe9cc`. GitHub's Windows machine built it
-  with the GNU toolchain from commit `fe73fa1` (run 43418571070, the comparison of the next section).
+  with the GNU toolchain from commit `fe73fa1` (run 43418571070, the comparison of the next section). The
+  release is tagged at the later commit `858dc6b`; the source of the program (`src/`, `Cargo.toml` and
+  `Cargo.lock`) is the same in both commits.
 - GitHub built that commit twice in that run (attempts 1 and 2; the second is a rerun asked for by the
   author to get a second sample). The two programs have the same size and differ in 4 bytes, all inside
   the time-stamp and checksum fields of the file header. The measured file is the first build. GitHub's
-  run page now lists only the files of the second build; the first build is kept as the author's copy and
-  is the file meant for the release.
+  run page now lists only the files of the second build; the first build is the file published in the
+  release (see "Release download check").
+- Two later runs on GitHub's Windows machines built the same source again (runs 43586788453 and
+  43588475930). Each of those two programs has the same size as the released file and differs from it in
+  5 bytes, again all inside the time-stamp and checksum fields of the header. On GitHub's Linux machines
+  the four builds of that source made by the comparison workflow have the same SHA-256.
 - The library (`kilat_core.dll`, the "kilat library" of the size table) was not built by GitHub. The
   check "The library prints what the program prints" loads it. It was built on this PC with a GNU
   toolchain from the same 20 source files: each was compared with commit `fe73fa1`, and none was changed
@@ -130,8 +137,8 @@ and the ones below. Every figure here is read from a file saved during the work.
   0.2.3: timed in turn on this PC for 9 rounds, the 0.2.2 and the 0.2.3 program took the same time (best
   0.137 s each; medians 0.142 s and 0.143 s). In that check CPython took 0.260 s, so Kilat was 1.90 times
   CPython for the whole process and 1.47 net. Between the 0.2.2 run and this one CPython's `sieve` time
-  fell from 0.313 s to 0.221 s while Kilat's went from 0.123 s to 0.132 s. GitHub's four runs gave 2.06
-  to 2.43 net. Why Kilat's time did not fall with CPython's was not found. One guess, not tested: the
+  fell from 0.313 s to 0.221 s while Kilat's went from 0.123 s to 0.132 s. GitHub's eight runs gave 1.73
+  to 2.48 net. Why Kilat's time did not fall with CPython's was not found. One guess, not tested: the
   list takes 16 bytes per item in Kilat against 8 in CPython (peak memory of the process minus that of an
   empty program, over 2,000,001 items).
 - The judge was started three times for 0.2.3:
@@ -276,8 +283,127 @@ faster and 1 slower on Windows and 0 faster and 1 slower on Linux of 43 programs
 from 0.99 to 1.02. So a single verdict in the tables above can be noise; the same verdict in all four
 samples is stronger.
 
-Both changes were kept. Not measured: each of the two changes on its own, and the speed of the web engine
-(`docs/kilat.wasm`).
+Both changes were kept. Each of the two changes was later measured on its own, and so was the whole step
+from 0.2.2 to 0.2.3. The two parts below report that; they were added on 2026-11-16 by a further script,
+which is not in the repository, from the reports of the runs they name. Not measured: the speed of the
+web engine (`docs/kilat.wasm`).
+
+### The whole step from 0.2.2 to 0.2.3
+
+Run 43586788453 of the same workflow compared commit `94690f4` (`kilat 0.2.2`: `main` before this work,
+with the same program source as the 0.2.2 release) with commit `858dc6b` (`kilat 0.2.3`, the commit of
+the release tag). There is one sample per machine, with 9 rounds per program. The step covers the new
+unit rule and both speed changes together.
+
+| Sample | Processor | 10 benchmarks, best / median | 9 benchmarks without `map_count`, best | 32 small programs, best / median | Same build timed twice, 10 benchmarks, best / median | Faster | No clear change | Slower |
+|---|---|---|---|---|---|---|---|---|
+| Windows | AMD EPYC 9V45 96-Core Processor | 1.06 / 1.06 | 1.02 | 1.06 / 1.06 | 1.00 / 1.00 | 19 | 24 | 0 |
+| Linux | not reported | 1.06 / 1.04 | 1.01 | 1.06 / 1.07 | 0.99 / 1.00 | 17 | 24 | 2 |
+
+Each benchmark, with the ratios of best and of median times and the verdict:
+
+| Program | Windows | Linux |
+|---|---|---|
+| `bench/collatz` | 0.98 / 1.02 no clear change | 1.29 / 1.10 faster |
+| `bench/fib` | 1.00 / 0.97 no clear change | 1.06 / 1.08 faster |
+| `bench/loop_sum` | 1.04 / 1.03 faster | 0.93 / 0.94 slower |
+| `bench/mandelbrot` | 1.11 / 1.12 faster | 1.04 / 0.99 no clear change |
+| `bench/map_count` | 1.45 / 1.49 faster | 1.59 / 1.58 faster |
+| `bench/matmul` | 1.07 / 1.04 no clear change | 1.00 / 0.98 no clear change |
+| `bench/nbody` | 1.02 / 0.99 no clear change | 0.84 / 0.82 slower |
+| `bench/sieve` | 0.99 / 0.99 no clear change | 0.99 / 0.98 no clear change |
+| `bench/sort` | 1.01 / 1.00 no clear change | 1.01 / 1.02 no clear change |
+| `bench/strings` | 1.00 / 1.01 no clear change | 1.01 / 1.00 no clear change |
+
+- `bench/map_count` ran 1.45 times as fast on Windows and 1.59 on Linux (ratios of best times). Without
+  it the other 9 benchmarks give 1.02 and 1.01.
+- No program was judged slower on Windows. On Linux two were: `bench/nbody` (0.84 best, 0.82 median) and
+  `bench/loop_sum` (0.93 best, 0.94 median). The next part looks at both.
+- Of the 193 runs whose output was compared, 2 differ, the same 2 in both reports: `tests/units.kilat`,
+  once run and once only checked. That file was changed for 0.2.3 and now uses the format `{4 Hz:1/s}`,
+  which 0.2.2 refuses (its message: "cannot read the format `1/s`") and 0.2.3 accepts.
+- The 23 error messages were the same in both builds. The fuel use of 55 programs was the same;
+  `tests/units` was left out of that comparison because it does not end the same way in both builds.
+
+### Each speed change on its own
+
+Runs 43588473616 and 43588475930 of the same workflow, started by hand, each compared two neighbouring
+commits: `0e17f86` with `83eefbb`, which adds only the `get_or` instruction, and `83eefbb` with
+`705bc2f`, which adds only the short path. There is one sample per machine, with 9 rounds per program;
+all four builds call themselves `kilat 0.2.3`. The program source of `705bc2f` is the same as in the
+release.
+
+| Sample | Processor | 10 benchmarks, best / median | 9 benchmarks without `map_count`, best | 32 small programs, best / median | Same build timed twice, 10 benchmarks, best / median | Faster | No clear change | Slower |
+|---|---|---|---|---|---|---|---|---|
+| `get_or` only, Windows | AMD EPYC 7763 64-Core Processor | 1.05 / 1.04 | 1.01 | 1.02 / 1.02 | 0.99 / 0.99 | 6 | 33 | 4 |
+| `get_or` only, Linux | not reported | 1.01 / 1.01 | 0.95 | 1.03 / 1.03 | 1.01 / 1.00 | 3 | 38 | 2 |
+| Short path only, Windows | AMD EPYC 9V45 96-Core Processor | 1.03 / 1.03 | 1.04 | 1.03 / 1.03 | 1.00 / 1.00 | 17 | 25 | 1 |
+| Short path only, Linux | not reported | 1.04 / 1.04 | 1.05 | 1.04 / 1.05 | 1.03 / 1.00 | 12 | 29 | 2 |
+
+Each benchmark, with the ratios of best and of median times and the verdict:
+
+| Program | `get_or` only, Windows | `get_or` only, Linux | Short path only, Windows | Short path only, Linux |
+|---|---|---|---|---|
+| `bench/collatz` | 1.23 / 1.10 faster | 0.97 / 0.98 no clear change | 1.03 / 1.03 no clear change | 1.13 / 1.13 no clear change |
+| `bench/fib` | 1.02 / 1.01 no clear change | 1.01 / 1.03 no clear change | 1.01 / 1.01 no clear change | 1.07 / 1.09 faster |
+| `bench/loop_sum` | 0.92 / 0.95 slower | 0.66 / 0.68 slower | 1.02 / 1.02 no clear change | 1.47 / 1.48 faster |
+| `bench/mandelbrot` | 0.92 / 0.92 slower | 0.96 / 0.96 no clear change | 1.11 / 1.11 faster | 0.97 / 0.99 no clear change |
+| `bench/map_count` | 1.57 / 1.60 faster | 1.79 / 1.76 faster | 0.99 / 0.99 no clear change | 1.01 / 1.01 no clear change |
+| `bench/matmul` | 1.00 / 1.00 no clear change | 1.00 / 1.00 no clear change | 1.04 / 1.04 faster | 1.02 / 1.00 no clear change |
+| `bench/nbody` | 0.99 / 0.98 no clear change | 1.00 / 0.99 no clear change | 1.03 / 1.03 no clear change | 0.85 / 0.84 slower |
+| `bench/sieve` | 0.99 / 0.99 no clear change | 1.01 / 1.00 no clear change | 1.12 / 1.12 faster | 1.00 / 0.99 no clear change |
+| `bench/sort` | 0.99 / 0.98 no clear change | 1.01 / 1.00 no clear change | 1.00 / 1.00 no clear change | 1.00 / 1.01 no clear change |
+| `bench/strings` | 1.01 / 1.01 no clear change | 0.99 / 0.99 no clear change | 1.00 / 1.01 no clear change | 1.01 / 0.99 no clear change |
+
+Every program judged slower, with the ratios of best and of median times:
+
+- `get_or` only, Windows: `bench/loop_sum` 0.92 / 0.95, `bench/mandelbrot` 0.92 / 0.92,
+  `micro/call_g_float_only` 0.93 / 0.84, `micro/call_h_sqrt` 0.88 / 0.86.
+- `get_or` only, Linux: `bench/loop_sum` 0.66 / 0.68, `micro/call_d_len` 0.94 / 0.94.
+- Short path only, Windows: `micro/fill_1m` 0.95 / 0.95.
+- Short path only, Linux: `bench/nbody` 0.85 / 0.84, `micro/call_n_is_nan` 0.96 / 0.97.
+
+What the two runs show:
+
+- The `bench/map_count` gain comes from the `get_or` instruction. With that change alone the program ran
+  1.57 times as fast on Windows and 1.79 on Linux (ratios of best times, judged faster on both). With the
+  short path alone it gave 0.99 and 1.01, no clear change on both.
+- In the `get_or`-only sample on Linux the 9 benchmarks without `bench/map_count` come to 0.95. One
+  program accounts for that, `bench/loop_sum` at 0.66: the remaining 8 give 0.99.
+- On Linux `bench/nbody` ran slower with the short path alone: 0.85 best, 0.84 median. The other three
+  samples of these two runs show no clear change for it. Counting the earlier runs, it was judged slower
+  in each of the 4 Linux comparisons whose "after" build has the short path and whose "before" build does
+  not (0.82 to 0.94 over their ratios of best and of median times). The "after" program of those 4 is one
+  and the same file, byte for byte, so they are 4 timings of one build against 3 different "before"
+  builds, not 4 independent builds.
+- `bench/nbody` calls none of the 15 builtins of the short path. It calls `sqrt` and `len`, which compile
+  to instructions of their own and do not go through the function that the commit changed, and `print`,
+  twice, outside its loops. What the commit changed in structure: it split the function that runs a
+  builtin in two, a small one that answers the 15 builtins and a second one, kept out of line, for all
+  the others. Every other builtin that has no instruction of its own is now reached through the small
+  function, which hands the call on. Whether that, or the place the compiler gave the code of the virtual
+  machine in the new build, is behind the Linux result was not tested. The cause was not found.
+- On Linux `bench/loop_sum` was judged slower with the `get_or` change alone (0.66 best, 0.68 median) and
+  faster with the short path alone (1.47, 1.48). The program calls only its own function and `print`,
+  once, and uses neither `get_or` nor any of the 15 builtins. Multiplied, the two steps give 0.98 for the
+  best times and 1.01 for the medians; that is a rough check, because the two factors come from separate
+  runs. Three samples measured both changes in one step: the two Linux samples at the top of this section
+  gave 1.00 and 1.03 (ratios of best times), and the sample of the whole step above, whose "before" build
+  is 0.2.2, gave 0.93. So the verdict for this program changed with each new build, and a verdict on one
+  change is not always an effect of what the change does. A guess, not tested: the place the compiler
+  gives the code of the virtual machine's loop.
+- The same swing, slower with the first change and faster with the second on the same system, shows for 5
+  of the 6 programs judged slower with the `get_or` change alone: on Windows `bench/mandelbrot`,
+  `micro/call_g_float_only` and `micro/call_h_sqrt`; on Linux `bench/loop_sum` and `micro/call_d_len`.
+- With the short path alone the small programs written to time `sqrt` and `len` were judged faster
+  (`micro/call_h_sqrt` on Windows, `micro/call_d_len` on Windows and Linux), although those two calls are
+  instructions of their own and the two programs call none of the 15 builtins. Why was not looked into.
+- This is a limit of the comparison tool. Its band for "no clear change" comes from timing one build
+  twice, so it covers timing noise. It does not cover the effect that a new build can have on code the
+  change did not touch. A single verdict for a program that a change does not touch should be read with
+  that in mind.
+- In all four reports both builds printed the same in 193 runs, gave the same 23 error messages and used
+  the same fuel in 56 programs.
 
 ## Fuzz and differential tests
 
@@ -323,6 +449,43 @@ written by the author of Kilat.
 - `python tests/unit_hints_test.py` checks how values with a unit are shown and the hints Kilat gives,
   now with the display rule of 0.2.3 (75 of 75; the test had 20 cases for 0.2.2).
 
+## Release download check (0.2.3)
+
+Added on 2026-11-16 by a further script, which is not in the repository, from the records of two other
+scripts that are not in it either: one downloaded the two files of the 0.2.3 release on 2026-11-16 and
+checked them, the other holds the result of the install made the same day.
+
+| Check | Result |
+|---|---|
+| `kilat.exe` from the release page | 1,362,944 bytes; SHA-256 the same as the file GitHub built, which is the program measured above |
+| `kilat-windows-x64.zip` from the release page | 680,444 bytes; SHA-256 the same as the uploaded file; holds exactly the 10 expected files; the `kilat.exe` inside has the same SHA-256 as the download |
+| The 9 other files in the zip | each the same as the file at tag `v0.2.3` |
+| `kilat version`, with the download and with the program from the zip | `kilat 0.2.3` |
+| The 5 examples, run with the program from the zip | each ends with exit code 0 and gives the same output with the downloaded `kilat.exe` and with the program that GitHub's `ci` workflow built with Microsoft's toolchain from commit `fe73fa1` |
+| `print(2 m + 3 kg)` | refused before it runs: unit mismatch, cannot add m and kg |
+| `let d = 2.4 mm` then `print(d)` | refused before it runs, with a hint that names `{d:mm}` |
+| `let d = 2.4 mm` then `print("{d:mm}")` | prints `2.4 mm` |
+
+- SHA-256 of `kilat.exe`: `db646696dc987dff95ebc9b64df5de275e0311cd8170479582aba07d0a0fe9cc`
+- SHA-256 of `kilat-windows-x64.zip`: `6ca3a728f165acc73ef0e3b69d6650f6dd6f62a1636026ad3adbc018a8475466`
+- GitHub's own digests of the two files, read from its API, are the same values.
+
+The install, on the author's PC:
+
+- `install.cmd /quiet` was run from the unpacked download on 2026-11-16 and ended with exit code 0.
+- The installed `kilat.exe` is the file of the release (same size, same SHA-256). It replaced an
+  installed 0.2.1 (1,271,808 bytes).
+- The user's PATH already held the Kilat folder from the earlier install and was left unchanged: 18
+  entries before and after, the same text.
+- A new process, given the PATH that the registry holds after the install (machine part, then user part),
+  found `kilat` in the install folder. In it `kilat version` printed `kilat 0.2.3`,
+  `kilat run examples\hello.kilat` printed `stress = 20.7 MPa` and `kilat eval "print(90 km/h in mph)"`
+  printed `55.9234073014`.
+- Not tested: a first install of 0.2.3 on a PC without Kilat (the step that adds the folder to PATH did
+  not run this time), another PC, and a download with a browser.
+- The files are not signed, so Windows may show a SmartScreen prompt. The files checked here were
+  downloaded by a script, not with a browser.
+
 ## Reruns on GitHub's machines (0.2.3)
 
 Added by the same separate script from the results of `.github/workflows/ci.yml`. Each machine builds
@@ -336,14 +499,35 @@ and the programs are the author's; no other person repeated the measurements.
 | `fe73fa1` | 43418571144 | Linux | not reported | 3.13.18 | 2.96 | 2.91 | 0 of 10 | 20 of 20 | 11,608 | 900 | 0 |
 | `fe73fa1` | 43418571020 | Windows | AMD EPYC 9V45 96-Core Processor | 3.13.17 | 2.84 | 2.76 | 0 of 10 | 20 of 20 | 11,608 | 900 | 0 |
 | `fe73fa1` | 43418571020 | Linux | not reported | 3.13.18 | 3.13 | 3.06 | 0 of 10 | 20 of 20 | 11,608 | 900 | 0 |
+| `858dc6b` | 43586788450 | Windows | AMD EPYC 9V74 80-Core Processor | 3.13.17 | 3.09 | 3.03 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `858dc6b` | 43586788450 | Linux | not reported | 3.13.18 | 2.98 | 2.92 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `858dc6b` | 43588103562 | Windows | AMD EPYC 9V45 96-Core Processor | 3.13.17 | 2.92 | 2.85 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `858dc6b` | 43588103562 | Linux | not reported | 3.13.18 | 3.12 | 3.06 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
 
 - GitHub started the workflow twice for commit `fe73fa1` (two events for the same pull request), so each
-  machine type ran it twice. Both runs are shown; neither was picked.
-- Over these 4 runs Kilat was 2.84 to 3.13 times as fast as CPython for the whole process and 2.76 to
-  3.06 net of start-up. CPython's start-up took 11 to 24 ms of CPU time on these machines and 74 ms in
-  the run on the author's PC, so the net figures of the two should not be compared directly.
+  machine type ran it twice. Commit `858dc6b` ran once for its pull request (run 43586788450) and once
+  after it reached `main` (run 43588103562). All eight runs are shown; none was picked or left out. The
+  rows of commit `858dc6b` and the notes on them were added on 2026-11-16 by a further script, from
+  reports of the same kind.
+- Over these 8 runs Kilat was 2.84 to 3.13 times as fast as CPython for the whole process and 2.76 to
+  3.06 net of start-up. 4 of the 8 runs reached 3 times for the whole process, and the same 4 reached it
+  net of start-up. CPython's start-up took 10 to 24 ms of CPU time on these machines and 74 ms in the run
+  on the author's PC, so the net figures of the two should not be compared directly.
+- In each of the 8 runs `strings` was the program closest to CPython net of start-up, at 1.14 to 1.41;
+  `sieve` gave 1.73 to 2.48.
 - The 900 skipped fuzz cases in the rows of commit `fe73fa1` are the mistake described under "Fuzz and
-  differential tests": those runs used the test before the correction.
+  differential tests": those runs used the test before the correction. The four runs of commit `858dc6b`
+  used the corrected test: 11,608 cases, none skipped and no failures in each, and the cases ended the
+  same way as in the run on the author's PC (5,618 finished, 5,601 refused before running, 318 run-time
+  errors, 67 fuel stops, 4 memory stops).
+- All four Windows runs built the same `docs/kilat.wasm` as the one in the repository (786,285 bytes,
+  SHA-256 `d81524ed2069618962ca0ad36c46496c0fb96d6610e84f1763aa73055b9fd905`). All four Linux runs built
+  another file of the same size (SHA-256
+  `adb1a6f6279c979d6cabd6e238a72207798ed77f342c0e872335a620d3f6bbdb`), also the same in all four. Why the
+  two systems give different files was not looked into.
+- The Cairn plugin (`main.js`) came to 392,381 bytes in the two Windows runs of commit `858dc6b` and
+  392,373 in the two Linux runs. The workflow's new step, which fails when the plugin is longer than
+  Cairn's limit of 400,000 characters, passed in all four.
 - Language tests 7 of 7, library tests 12 of 12 and sandbox tests 6 of 6 in every run.
 
 ## Model sample on the live GlowCode page (0.2.2)

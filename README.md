@@ -100,7 +100,8 @@ With start-up taken out, Kilat is slower than CPython on: none; about level (wit
 The PC was busy with other work during this run: its processors were 62 to 100 % in use in the
 9 samples taken while it ran. That makes these figures noisier than a quiet run would give;
 CPython's start-up measured 74 ms here against 35 ms in the quiet run for 0.2.1.
-The Kilat program that was measured is the file GitHub's Windows machine built for the 0.2.3 release.
+The Kilat program that was measured is the `kilat.exe` of the 0.2.3 release, built by GitHub's
+Windows machine.
 This was the third attempt to run `judge.py` for 0.2.3. The first stopped when a four-line Python
 helper did not finish within 60 seconds, and it saved no figures. The second finished its timing
 (3.09 for the whole process and 2.59 with start-up taken out, from its log; the figures per program
@@ -111,15 +112,17 @@ This run recorded 2 stalls, both of the Python-library call for `tests/builtins_
 120 seconds each time); the third try passed. Less than two minutes after the run ended, the same
 call took 0.14 to 0.16 s, three times in a row.
 No start was repeated to get a better number.
-GitHub's machines measured the commit the file for the release was built from twice, each time with
-their own build and 2 runs per program: 3.09 and 2.84 for Windows (3.02 and 2.76 with start-up taken out),
-and 2.96 and 3.13 for Linux (2.91 and 3.06).
+GitHub's machines measured two commits, each twice, with their own build and 2 runs per program: the
+commit the release file was built from and the commit of the release tag. For Windows the four runs
+gave 3.09, 2.84, 3.09 and 2.92 (3.02, 2.76, 3.03 and 2.85 with start-up taken out), and for Linux
+2.96, 3.13, 2.98 and 3.12 (2.91, 3.06, 2.92 and 3.06). 4 of these 8 runs reached 3 times, for the
+whole process and with start-up taken out alike; the run on this PC gave 3.06 and 2.49.
 Closest to CPython in this run, with start-up taken out: `sieve` (1.16), `map_count` (1.39) and
 `strings` (1.51). The low `sieve` figure is not a slowdown in 0.2.3: timed in turn on this PC, the
 0.2.2 and 0.2.3 programs both took 0.137 s (best of 9 rounds). Against the 0.2.2 run, CPython's time
 for `sieve` fell from 0.313 s to 0.221 s while Kilat's went from 0.123 s to 0.132 s; the reason was
-not found. GitHub's four runs gave 2.06 to 2.43 for `sieve`, and `strings` was the closest program
-in each of them (1.16 to 1.41): CPython's text code is very good.
+not found. GitHub's eight runs gave 1.73 to 2.48 for `sieve`, and `strings` was the closest program
+in each of them (1.14 to 1.41): CPython's text code is very good.
 Kilat is a bytecode interpreter, so compiled and JIT languages are faster than both, and Python with
 NumPy would win the array benchmarks. The goal set for this version was 5 times CPython; it was not reached.
 
@@ -163,16 +166,20 @@ from the same source with a GNU toolchain.
 - Fuel stop location (`python tests/fuel_location_test.py`): 4 of 4.
 - How values with a unit are shown, and the hints Kilat gives
   (`python tests/unit_hints_test.py`): 75 of 75.
-- The release download check was last run for 0.2.2: `kilat.exe` fetched from that release page had
-  the same SHA-256 as the build it came from, the zip held the same program, and the five examples
-  printed the same lines.
+- The release download check was run for 0.2.3 on 2026-11-16: `kilat.exe` fetched from the release
+  page had the same SHA-256 as the build it came from, the zip held the same program and exactly the
+  10 expected files, and the five examples gave the same output as with the build of GitHub's `ci`
+  workflow (Microsoft's toolchain).
 - Every push reruns `judge.py --quick` and the fuzz test on GitHub's Windows and Linux machines
-  (`.github/workflows/ci.yml`). The commit the file for the 0.2.3 release was built from was run
-  twice there and passed both times: 20 of 20 bugs refused, speed against CPython 3.13 of 3.09 and 2.84
-  (3.02 and 2.76 net of start-up) for Windows and 2.96 and 3.13 (2.91 and 3.06 net) for Linux, from 2 runs
-  per program. The Windows machine there builds with Microsoft's toolchain; the file for the
-  release was built with the GNU one. The fuzz test in those runs is the one that skipped the
-  900 unit cases. Same script, same author; not the headline numbers.
+  (`.github/workflows/ci.yml`). The commit the release file was built from (`fe73fa1`) and the
+  commit of the release tag (`858dc6b`) were each run twice there, and all four runs passed for both
+  systems: 20 of 20 bugs refused, speed against CPython 3.13 of 3.09, 2.84, 3.09 and 2.92 (3.02,
+  2.76, 3.03 and 2.85 net of start-up) for Windows and 2.96, 3.13, 2.98 and 3.12 (2.91, 3.06, 2.92
+  and 3.06 net) for Linux, from 2 runs per program. The Windows machine there builds with
+  Microsoft's toolchain; the release file was built with the GNU one. The fuzz test in the two runs
+  of the first commit is the one that skipped the 900 unit cases; the two runs of the second commit
+  used the corrected test: 11,608 cases, none skipped, no failures, for both systems. Same script,
+  same author; not the headline numbers.
 
 ## New in 0.2
 
@@ -227,6 +234,18 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
     samples only, and `is_nan` faster in three and slower in one; details are in `RESULTS.md`.
     The outputs of 193 runs, 23 error messages and the fuel use of 56 programs did not change.
     The web engine's speed was not measured.
+  - Later runs on GitHub measured each of the two speed changes on its own and the whole step from
+    0.2.2 to 0.2.3, one sample per system each. The `map_count` gain comes from the `get_or` change:
+    1.57 for Windows and 1.79 for Linux with it alone, and no clear change with the short path
+    alone. For Linux, `nbody` ran slower with the short path alone (0.85 of its earlier speed) and
+    in all 4 Linux comparisons that add the short path (0.82 to 0.94), although `nbody` calls none
+    of those builtins; the cause was not found. For Linux, `loop_sum`, which uses neither change,
+    ran at 0.66 of its earlier speed after the first change and at 1.47 after the second, so a
+    verdict for one change is not always an effect of what the change does. The comparison tool's
+    band covers timing noise, not this. From 0.2.2 to 0.2.3 the ten benchmarks together ran 1.06
+    times as fast for Windows and 1.06 for Linux (best times), and 1.02 and 1.01 without
+    `map_count`. For Linux, `nbody` (0.84) and `loop_sum` (0.93) were judged slower in that step;
+    for Windows, no program was. Details are in `RESULTS.md`.
 - GlowCode, a Glow page where a person or a model writes Kilat and the checker refuses a wrong
   program before it runs. It is merged into Glow and live at
   https://juw12.github.io/projects/glow/code/ (https://github.com/juw12/projects/pull/53).
@@ -247,7 +266,12 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
   It needs `DecompressionStream`. It keeps the result
   of each program text, so `rand()` and `clock()` stay the same until the blocks are run again.
   A block is stopped after 10 seconds.
-- `install.cmd` was run with `/dry-run` from the unpacked release zip; a real install was not run. The release files are unsigned, so Windows may show a SmartScreen prompt.
+- `install.cmd` from the downloaded 0.2.3 zip was run on one PC, the author's, on 2026-11-16. It
+  replaced an installed 0.2.1, and a new process then ran `kilat version` (`kilat 0.2.3`) and an
+  example. That PC already had the Kilat folder in its PATH from the earlier install, so the step
+  that adds it did not run this time. Not tested: a first install on a PC without Kilat, another PC,
+  and a download with a browser. The release files are unsigned, so Windows may show a SmartScreen
+  prompt.
 - The native program uses its own allocator for small blocks. Memory for small blocks is kept at its
   highest level until the program ends, and the command-line program does not free memory on exit.
   `unsafe` Rust is confined to two files, `src/alloc.rs` and `src/ffi.rs`.
