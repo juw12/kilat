@@ -104,18 +104,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         elif self.path == "/progress":
             self.server.progress.append(body.decode("utf-8", "replace"))
 
+    def log_request(self, code="-", size="-"):
+        # Kept for the message of a launch that never reports; see launch_facts.
+        answered = getattr(self.server, "answered", None)
+        if answered is not None:
+            answered.append((self.path, str(getattr(code, "value", code))))
+
     def log_message(self, *arguments):
         pass
 
 
-def start_browser(command):
+def start_browser(command, errors=subprocess.DEVNULL):
     """Starts the browser so that stop_browser can end it together with its helpers.
 
     Returns (process, group). A browser starts helper processes (renderer, crash handler)
     that outlive it when only the main process is ended, so on Windows they all go into
-    one job object, and elsewhere into one process group.
+    one job object, and elsewhere into one process group. `errors` is where the browser's
+    own error text goes.
     """
-    quiet = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+    quiet = {"stdout": subprocess.DEVNULL, "stderr": errors}
     if sys.platform != "win32":
         return subprocess.Popen(command, start_new_session=True, **quiet), None
     import ctypes
@@ -187,6 +194,29 @@ def remove_stale_profiles(older_than_seconds=600.0):
             shutil.rmtree(folder, ignore_errors=True)
 
 
+def launch_facts(browser, process, answered, browser_errors):
+    """What is known about a browser that never reported, as text for the error message."""
+    code = process.poll()
+    state = "still running" if code is None else f"had ended with exit code {code}"
+    answered = list(answered)
+    not_found = [f"{path} -> {status}" for path, status in answered if status != "200"]
+    lines = [
+        f"browser: {browser} ({state})",
+        f"requests answered: {len(answered)}; not 200: {', '.join(not_found[:10]) or 'none'}",
+    ]
+    if answered:
+        lines.append(f"last requests: {', '.join(path for path, _ in answered[-6:])}")
+    try:
+        written = browser_errors.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        written = []
+    written = [line for line in written if line.strip()]
+    if written:
+        lines.append("last lines the browser wrote:")
+        lines.extend(f"  {line[:300]}" for line in written[-12:])
+    return "\n".join(lines)
+
+
 def run_in_browser(cases, timeout=120.0, browser=None, page="tests/web_runner.html", root=ROOT):
     """Runs `cases` on `page` and returns what the page reports.
 
@@ -203,6 +233,7 @@ def run_in_browser(cases, timeout=120.0, browser=None, page="tests/web_runner.ht
     server.cases_json = json.dumps(cases).encode("utf-8")
     server.reports = queue.Queue()
     server.progress = []
+    server.answered = []
     threading.Thread(target=server.serve_forever, daemon=True).start()
     remove_stale_profiles()
     # A new folder for every launch: a browser that is still shutting down keeps its folder
@@ -220,13 +251,17 @@ def run_in_browser(cases, timeout=120.0, browser=None, page="tests/web_runner.ht
         f"--user-data-dir={profile}",
         f"http://127.0.0.1:{server.server_address[1]}/{page}",
     ]
-    process, group = start_browser(command)
+    browser_errors = profile / "kilat-browser-errors.txt"
+    with open(browser_errors, "wb") as errors:
+        process, group = start_browser(command, errors)
     try:
         report = server.reports.get(timeout=timeout)
     except queue.Empty:
         last = server.progress[-1] if server.progress else "none"
+        facts = launch_facts(browser, process, server.answered, browser_errors)
         raise TimeoutError(
             f"the browser did not report within {timeout:.0f} s (last finished check: {last})"
+            f"\n{facts}"
         ) from None
     finally:
         stop_browser(process, group)
