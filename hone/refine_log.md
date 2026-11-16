@@ -51,7 +51,7 @@ on every measured program, safer than Python on the bug set, and one click to in
 |---|---|---|---|---|---|---|
 | 0 | baseline 0.1.0 (94f3e63) | 5/5 | 5.15 (self) | - | baseline | council also scored 5.15; slower than CPython net of start-up on 2 of 10 programs |
 | 1 | 0.2.0 (11a0d2a): faster engine, mean / median / stddev, worker mode, release download, fuzz and differential test, Cairn and Glow pull requests | 5/5 | 7.05 (self) | yes (self) | kept | gain 1.90; no engine rebuild after 0.2.0, so G1 to G4 were last run on the same binaries; G5 holds because files were only added |
-| 8 | 0.2.3 (858dc6b; docs and checks up to 0fc6052): unit rule (a breaking change), speed work, release and real install, Cairn catalogue and GlowCode on 0.2.3, live checks of both apps, docs | 5/5 | 7.34 (council, 3 judges, mean of 4 runs) | - | kept | council v0 was 5.15, so the gain is 2.19 council to council; below DONE_SCORE 8.5; G5 is checked by deletions and file counts only; rounds 2 to 7 have no row here (0.2.1 was 7.61 self-judged, not comparable) |
+| 8 | 0.2.3 (858dc6b; docs and checks up to 0fc6052): unit rule (a breaking change), speed work, release and real install, Cairn catalogue and GlowCode on 0.2.3, live checks of both apps, docs | 5/5 | 7.34 (council, 3 judges, mean of 4 runs) | - | kept | council v0 was 5.15, so the gain is 2.19 council to council; below DONE_SCORE 8.5; G5: `bench` and `examples` unchanged since v0, the 10 changed bug files read, `tests` by counts only; rounds 2 to 7 have no row here (0.2.1 was 7.61 self-judged, not comparable) |
 
 Self-judge scores per criterion (rubric kilat-r2, weights 0.30 / 0.20 / 0.25 / 0.15 / 0.10):
 
@@ -373,7 +373,7 @@ Status of each item at the close of round 8 (2026-11-16):
 - [x] K. README and RESULTS brought up to date: `847299e` (1,759 gates of the docs script) and `0fc6052` (2,177 gates; 2 files, +360 -8). Pages and `ci` ran green on `0fc6052`, and both reports were read.
 - [x] L. Hone: the council scores v8 (0.2.3 at `0fc6052`) 7.34, against 5.15 for v0 by the same council. Gates 5/5. The 8.5 target is not reached.
 - [ ] M. Install Kilat in my own installed Cairn: NOT done. Cairn was the window in use each time I looked, so it was left alone. Nothing in the app, its settings or the vault was changed.
-- [ ] N. Full Cairn suite on Windows Python 3.13.2 on my PC: NOT run (PC saturated for the whole round). On GitHub Ubuntu at Cairn `5ba5fd8`: 468 tests, OK, 6 skipped, both jobs read.
+- [ ] N. Full Cairn suite on Windows Python 3.13.2 on my PC: NOT run (PC saturated for the whole round; at the last look, 2026-11-16 12:58 UTC, the processor was 99.6 % busy with a queue of 222). On GitHub Ubuntu at Cairn `5ba5fd8`: 468 tests, OK, 6 skipped, both jobs read.
 
 ### Findings
 
@@ -465,9 +465,18 @@ Gates for v8 (from `judge_report.json` of judge run 3 and from git):
 | G2 same printed text in Kilat and CPython | true for every benchmark | pass |
 | G3 20 of 20 bugs refused before running | 20 of 20; all 20 fixed versions run; mypy --strict catches 14 | pass |
 | G4 program at most 1.5 MB, plugin `main.js` at most 400,000 characters | 1,362,944 bytes (CI builds 1,490,432 and 1,490,656); 392,381 | pass |
-| G5 no test, benchmark or bug file deleted or weakened since v0 | nothing deleted since `94f3e63`; tracked files `tests` 15 -> 28, `bench` 20 -> 20, `bugs` 61 -> 61, `examples` 5 -> 5 | pass by counts only |
+| G5 no test, benchmark or bug file deleted or weakened since v0 | nothing deleted since `94f3e63`; tracked files `tests` 15 -> 28, `bench` 20 -> 20, `bugs` 61 -> 61, `examples` 5 -> 5; `bench` and `examples`: no file differs; `bugs`: 10 files differ (+14 -10 lines), all read; `tests`: 13 files added, 7 changed (+3604 -24 lines) | pass; `tests` by counts only |
 
-- G5 caveat: 0.2.3 changed 12 program files for the unit rule. "Not weakened" is not machine-checked beyond deletions and counts.
+- G5 detail (the diff from `94f3e63` to `0fc6052`, read on 2026-11-16): `bench` and `examples` have no changed file. The 10 changed bug files are 5 bugs and their fixed versions (`name_typo_in_variable`, `name_wrong_field`, `type_wrong_argument_count`, `units_add_length_to_mass`, `units_plain_number_as_speed`). Only their print lines changed, to name the unit: `print(radius)` became `print("{radius:mm}")`. Each bug itself is kept: the misspelled field `p.mas`, the call with a missing argument and the plain `90` are still there, moved into a placeholder or a `let` line. In `tests`, 7 older files changed (`builtins.kilat`, `builtins.out`, `tour.kilat`, `units.kilat`, `units.out`, `web_runner.html`, `web_test.py`); their 24 removed lines were not read one by one, so "not weakened" is not fully checked there.
+- The 5 changed bugs with the installed 0.2.3 (run on 2026-11-16): each buggy file is refused (exit code not 0) and each fixed file runs (exit 0). First lines of the refusals:
+
+```text
+bugs/name_typo_in_variable.kilat  exit 1  error: unknown name `diametre` | --> bugs/name_typo_in_variable.kilat:3:14
+bugs/name_wrong_field.kilat  exit 1  error: `Part` has no field `mas` | --> bugs/name_wrong_field.kilat:4:10
+bugs/type_wrong_argument_count.kilat  exit 1  error: `beam_deflection` takes 4 argument(s), found 3 | --> bugs/type_wrong_argument_count.kilat:5:26
+bugs/units_add_length_to_mass.kilat  exit 1  error: unit mismatch: cannot add m and kg | --> bugs/units_add_length_to_mass.kilat:4:20
+bugs/units_plain_number_as_speed.kilat  exit 1  error: argument 1 of `braking_distance`: expected m/s, found Int | --> bugs/units_plain_number_as_speed.kilat:5:33
+```
 
 Cairn and projects `main`:
 
@@ -517,6 +526,7 @@ Mistakes and trouble in this round:
 - Model reliability on independent answers. The sample is mostly replays and its check reads numbers only.
 - The causes of four things: the low Linux CI report (2.78), the Linux `nbody` and `loop_sum` slowdown, the low `sieve` figure on my PC, and the red `verify_review.py` run.
 - The words "numbers not in the prompt" in the 0.2.2 held-out row of RESULTS were not rechecked in this round.
+- G5 for `tests`: the 24 lines removed from older test files since v0 were not read one by one.
 - Kilat has not been shown to beat Python overall. It is about 3 times faster on these 10 small programs and refuses these 20 bugs before running; Python's libraries, tools and users are not matched.
 
 ### Known routes not taken in this round
