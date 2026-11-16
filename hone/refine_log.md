@@ -51,6 +51,7 @@ on every measured program, safer than Python on the bug set, and one click to in
 |---|---|---|---|---|---|---|
 | 0 | baseline 0.1.0 (94f3e63) | 5/5 | 5.15 (self) | - | baseline | council also scored 5.15; slower than CPython net of start-up on 2 of 10 programs |
 | 1 | 0.2.0 (11a0d2a): faster engine, mean / median / stddev, worker mode, release download, fuzz and differential test, Cairn and Glow pull requests | 5/5 | 7.05 (self) | yes (self) | kept | gain 1.90; no engine rebuild after 0.2.0, so G1 to G4 were last run on the same binaries; G5 holds because files were only added |
+| 8 | 0.2.3 (858dc6b; docs and checks up to 0fc6052): unit rule (a breaking change), speed work, release and real install, Cairn catalogue and GlowCode on 0.2.3, live checks of both apps, docs | 5/5 | 7.34 (council, 3 judges, mean of 4 runs) | - | kept | council v0 was 5.15, so the gain is 2.19 council to council; below DONE_SCORE 8.5; G5 is checked by deletions and file counts only; rounds 2 to 7 have no row here (0.2.1 was 7.61 self-judged, not comparable) |
 
 Self-judge scores per criterion (rubric kilat-r2, weights 0.30 / 0.20 / 0.25 / 0.15 / 0.10):
 
@@ -58,6 +59,13 @@ Self-judge scores per criterion (rubric kilat-r2, weights 0.30 / 0.20 / 0.25 / 0
 |---|---|---|---|---|---|---|
 | v0 | 4.0 | 7.0 | 5.0 | 4.0 | 7.0 | 5.15 |
 | v1 | 6.0 | 8.0 | 7.5 | 7.5 | 6.5 | 7.05 |
+
+Council scores per criterion (median of the 3 judges; not comparable with the self-judged rows above):
+
+| version | S1 speed | S2 safety | S3 usable today | S4 Cairn and Glow | S5 honest claims | total |
+|---|---|---|---|---|---|---|
+| v0 | 4.0 | 7.0 | 5.0 | 4.0 | 7.0 | 5.15 |
+| v8 | 6.0 | 8.0 | 8.0 | 9.0 | 7.0 | 7.34 (mean of 4 runs; these medians alone give 7.45) |
 
 - S1 v1: no program slower net of start-up, but the net mean is 2.62 (under 3) and two programs are about level.
 - S2 v1: fuzz and differential test added (11,607 cases, 0 failures); bug set and reference are still written by the author.
@@ -318,13 +326,14 @@ Mistakes and trouble in this round:
 
 - Kilat is not installed in my own Cairn; block rendering inside my real notes.
 - `install.cmd` real run for 0.2.2 (0.2.1 was only run with `/dry-run`).
+  - Correction (2026-11-16): the part in brackets was wrong. Before the real 0.2.3 install the installed `kilat.exe` already reported 0.2.1, so a real install of 0.2.1 had been run on my PC. A real install of 0.2.2 was never run; 0.2.3 was installed for real on 2026-11-16T02:20:17Z (round 8, item F).
 - Full Cairn test suite on Windows Python 3.13.2.
 - Whether the three new checker hints help a model in practice (never seen to fire in the sample).
 - Model reliability on independent answers (not replays).
 - Speed goals not reached: 3x net and 5x. Hone score 7.61 self-judged, below 8.5, no outside judge.
 - Kilat has not been shown to beat Python overall. It is faster on these 10 small programs and refuses more of these 20 bugs; Python's libraries, tools and users are not matched.
 
-## Handoff
+## Handoff (round 7, closed)
 
 Next queue, in order:
 
@@ -338,3 +347,196 @@ Next queue, in order:
 5. Flaky `apps/fade/tests/verify_api.py` in juw12/projects (my call; not touched).
 6. Speed (3x net, 5x) and hone score to 8.5 with an outside judge.
 7. Model samples that are independent (fresh answers, held-out tasks, more than one provider).
+
+Status of each item at the close of round 8 (2026-11-16):
+
+1. Done, target partly met. Kilat 0.2.3 is released and installed. Readings: repeat 1 printed `mean = 2.12 mm, max = 2.4 mm`; repeats 2 and 3 printed no unit at all and counted as correct, because the check reads numbers only. Box volume 2, repeat 1, printed mL where litres were asked.
+2. Not done. Cairn was the window in use each time I looked, so it was left alone. It is three clicks: Plugins -> turn on community plugins -> Install on the Kilat card.
+3. Not run on my PC (saturated for the whole round). On GitHub Ubuntu at Cairn `5ba5fd8`: 468 tests, OK, 6 skipped, both jobs read.
+4. Done: `cmd /c install.cmd /quiet` on 2026-11-16T02:20:17Z, exit 0, 0.2.1 -> 0.2.3. Not tested: a PC without Kilat, another PC, a download with a browser.
+5. `verify_api.py` was fixed by someone else (`54d36fb`, 2026-11-14). A second fade test, `verify_review.py`, was red once; see the round 8 findings. Not touched.
+6. Not reached. Net of start-up: 2.49x on my PC, 2.70x to 3.13x on GitHub. 5x is not in reach without a redesign. An outside judge (the council) now gives 7.34, below 8.5.
+7. Partly. 14 held-out tasks (4 of them reused from 0.2.2) and models from three providers, but most answers were replays (39 of 72 came back in under 3 s).
+
+## Round 8 (2026-11-13 to 2026-11-16)
+
+- [x] A. Kilat 0.2.3 (`858dc6b` on main, tag `v0.2.3`): the unit rule. A value with a unit never turns into text without a named unit. `print("force = {force}")` printed `force = 250.0 N` in 0.2.2; 0.2.3 refuses it with the hint `{force:N}`. `{force:N}` and `{force:kN.3}` work as before. This is a breaking change: 12 of the 61 program files in this repository had to change. Unit hints: 75 of 75 (a build of the 0.2.2 source gives 40 of 75).
+- [x] B. Speed work (merge `fe73fa1`), measured by the compare workflow, 0.2.2 against 0.2.3 in the same job (run 43586788453): 1.06 on the 10 benchmarks on Windows and on Linux, but only 1.02 and 1.01 without `map_count`. Numbers and caveats below.
+- [x] C. Local judge on my PC, run 3 (2026-11-14, CPython 3.13.2, Windows 10, PC saturated): 3.06x whole process, 2.49x net of start-up, faster on 10 of 10, same printed text on every benchmark, 20 of 20 bugs refused before running (mypy --strict catches 14). Runs 1 and 2 were lost.
+- [x] D. Kilat CI: nine runs of 0.2.3, one Windows and one Linux report each, all eighteen reports read. Whole process 2.78x to 3.19x, net 2.70x to 3.13x, 11 of 18 reached 3 times. Fuzz in each run: 11,608 cases, 0 skipped, 0 failures.
+- [x] E. Release v0.2.3 published (2026-11-16T02:05:54Z, release id 446529464). The download check passed (exit 0): zip 680,444 bytes, `kilat.exe` 1,362,944 bytes.
+- [x] F. Real install on my PC: `cmd /c install.cmd /quiet` on 2026-11-16T02:20:17Z, exit 0. The installed `kilat.exe` went from 0.2.1 to 0.2.3. My user PATH did not change.
+- [x] G. Cairn catalogue 0.2.2 -> 0.2.3: PR 42 merged (`ee87743` on juw12/cairn main). The live catalogue and the live plugin `main.js` (392,381 bytes) are 0.2.3. Read again from `main` at `5ba5fd8`: still 0.2.3.
+- [x] H. GlowCode web engine 0.2.3: PR 80 merged (`76594df` on juw12/projects main). The live `kilat.wasm` (786,285 bytes), `code.js`, `kilat.js` and `index.html` are byte-identical to the committed files.
+- [x] I. New checks of the two apps from this repository (workflow `apps`; commits `9e1830b`, `bb33f08`, `7fe08c8`). A real browser opens the live GlowCode page: 9 of 9, three runs. A real browser loads the Kilat plugin into Cairn: Windows 8 of 8, three runs; Ubuntu failed twice, then 8 of 8 once.
+- [x] J. Model sample on the live page with 0.2.3: main set 30 of 30 (26 on the first try), held-out set 39 of 42 (36 on the first try). Weak evidence; caveats below.
+- [x] K. README and RESULTS brought up to date: `847299e` (1,759 gates of the docs script) and `0fc6052` (2,177 gates; 2 files, +360 -8). Pages and `ci` ran green on `0fc6052`, and both reports were read.
+- [x] L. Hone: the council scores v8 (0.2.3 at `0fc6052`) 7.34, against 5.15 for v0 by the same council. Gates 5/5. The 8.5 target is not reached.
+- [ ] M. Install Kilat in my own installed Cairn: NOT done. Cairn was the window in use each time I looked, so it was left alone. Nothing in the app, its settings or the vault was changed.
+- [ ] N. Full Cairn suite on Windows Python 3.13.2 on my PC: NOT run (PC saturated for the whole round). On GitHub Ubuntu at Cairn `5ba5fd8`: 468 tests, OK, 6 skipped, both jobs read.
+
+### Findings
+
+Judge run 3 on my PC, per program (whole process / net of start-up): `collatz` 2.90 / 2.64, `fib` 2.78 / 2.08, `loop_sum` 3.71 / 3.24, `mandelbrot` 3.51 / 3.15, `map_count` 1.95 / 1.39, `matmul` 3.34 / 2.62, `nbody` 3.01 / 2.65, `sieve` 1.67 / 1.16, `sort` 9.93 / 9.61, `strings` 2.13 / 1.51. Start-up: Kilat 0.0058 s, CPython 0.0739 s. The net figure depends on the start-up estimate, so it cannot be compared with the GitHub figures. During the run the processor was 61.7 to 100 % busy and its queue was 5 to 290 long. 0.2.2 measured 3.02x / 2.54x on the same busy PC, so no clear gain is shown on my PC. 5x is not in reach without a redesign.
+
+- `sieve`: the 0.2.2 and the 0.2.3 program both take 0.137 s at best on my PC. Why its net figure is so low (1.16) is not shown.
+- Run 1 crashed after about 27 minutes. Run 2 crashed too; its one surviving line was 3.09x / 2.59x. Run 3 recorded two stalls of the Python reference (`python.exe kilat.py builtins_edge.kilat`, limit 120 s). They are stalls on a saturated PC, not failures of Kilat.
+
+Kilat CI reports of 0.2.3, on GitHub's machines:
+
+| Commits | Reports | Whole process | Net of start-up | Reached 3 times |
+|---|---|---|---|---|
+| `fe73fa1`, `858dc6b` | 8 | 2.84 to 3.13 | 2.76 to 3.06 | 4 of 8 |
+| `847299e`, `9e1830b`, `bb33f08`, `7fe08c8` | 8 | 2.78 to 3.19 | 2.70 to 3.13 | 5 of 8 |
+| `0fc6052` | 2 | 3.11 to 3.16 | 3.04 to 3.09 | 2 of 2 |
+| all | 18 | 2.78 to 3.19 | 2.70 to 3.13 | 11 of 18 |
+
+- The lowest report (Linux, 2.78 / 2.70) and the highest (Windows, 3.19 / 3.13) are in the same run, 43837645294 of `7fe08c8`.
+- The Linux program file is byte-identical in all nine Linux reports, so the Linux spread does not come from the build. Its cause is not found.
+- The nine Windows reports hold nine different `kilat.exe` files. Why the Windows build is not reproducible was not looked into.
+- Weakest programs on GitHub, net of start-up: `strings` 1.14 to 1.41, `sieve` 1.59 to 2.67.
+- The run of the docs commit `0fc6052` (43861610828): Windows 3.16 / 3.09 (CPython 3.13.17), Linux 3.11 / 3.04 (CPython 3.13.18), 10 of 10 faster on both. These two reports are not in README or RESULTS, which hold the first 16 ("9 of the 16 reached 3 times").
+- Fuzz: the CI fuzz first reported 900 skipped cases. They came from my own new unit rule, not from a fault in the engine. Since the fix every run has 11,608 cases, 0 skipped, 0 failures.
+- Sizes: local `kilat.exe` 1,362,944 bytes; CI builds 1,490,432 (Windows) and 1,490,656 (Linux); plugin `main.js` 392,381 of the 400,000 characters the guard allows; `kilat.wasm` 786,285 bytes. The Windows-built wasm equals the committed one. The Linux-built wasm differs; why was not looked into.
+
+Compare workflow, 0.2.2 against 0.2.3 on the same machine in the same job (run 43586788453; above 1 means 0.2.3 is faster):
+
+| | Windows | Linux |
+|---|---|---|
+| 10 benchmarks, from best times / from median times | 1.060 / 1.057 | 1.060 / 1.035 |
+| 9 benchmarks without `map_count` | 1.02 | 1.01 |
+| `map_count` | 1.45 | 1.59 |
+| timed programs faster / no clear change / slower | 19 / 24 / 0 | 17 / 24 / 2 |
+
+- More than half of the gain is one program, `map_count`.
+- Linux has two slower programs: `bench/nbody` (0.84 from best times, 0.82 from medians) and `bench/loop_sum` (0.93, 0.94). The cause is not tested and not found.
+- 193 outputs compared, 2 different: `tests/units`, the test the unit rule changed.
+- Isolation runs 43588473616 (the `get_or` change alone) and 43588475930 (the short path change alone): `map_count` is 1.57 on Windows and 1.79 on Linux with `get_or` alone, and 0.99 and 1.01 with the short path alone.
+
+The three runs of the `apps` workflow:
+
+| Run | Kilat head | Live GlowCode page | Cairn plugin, Windows | Cairn plugin, Ubuntu | Model sample |
+|---|---|---|---|---|---|
+| 43825862174 | `9e1830b` | 9 of 9 | 8 of 8 | failed (timeout, no facts) | main 30 of 30, held-out 39 of 42 |
+| 43836555198 | `bb33f08` | 9 of 9 | 8 of 8 | failed (Edge exit -6, 0 requests) | skipped |
+| 43837700374 | `7fe08c8` | 9 of 9 | 8 of 8 | 8 of 8 | skipped |
+
+- The Ubuntu leg passed once, after two failures. The fix (`7fe08c8`) lets Edge build its sandbox on GitHub's runner with a `sudo sysctl` setting. One pass fits the cause, but it is not a steady result.
+- Kilat's own browser tests (`web_test.py`, `page_test.py`: 81 web and 44 page checks) are in no workflow. They have run only on my PC.
+- The browser tests of juw12/projects itself do not open the GlowCode page.
+
+Model sample on the live page with 0.2.3 (free models from three providers, 45 s between runs, a number within 1.5 % counts as correct):
+
+| Set | Tasks x repeats | Correct | First try | Ran but wrong | Refused |
+|---|---|---|---|---|---|
+| main | 10 x 3 | 30 | 26 | 0 | 0 |
+| held-out | 14 x 3 | 39 | 36 | 1 | 2 |
+
+- Replays: 39 of the 72 answers came back in under 3 s, and 37 of the 48 later repeats ended with the same program as an earlier repeat. These are not 72 independent samples.
+- Three of the 10 main questions are the page's own example buttons. The page's prompt shares the numbers 1450, 12, 470 and 1.5 kN with main questions.
+- 4 of the 14 held-out tasks were already used for 0.2.2.
+- "Correct" reads the numbers, not the unit labels. One "correct" answer printed `Force = 12.57 kN/kN kN`.
+- Box volume 2, repeat 1, printed `volume = 15120.00 mL` where litres were asked. That is the one "ran but wrong".
+- Hand checks with the installed 0.2.3: `(volume_mm3 in mL) / 1000` with brackets runs and prints `volume = 15.12 L`; without brackets the checker says ``unexpected `/` after the end of the statement`` and does not mention brackets; `print("Force = {force:kN.2}")` prints `Force = 12.57 kN`.
+
+Hone council, v8 (0.2.3 at `0fc6052`; rubric kilat-r2; protocol `score --runs 4 --timeout 240`; the dossier is README plus RESULTS as committed, 89,668 bytes):
+
+- Council score 7.34: the mean of 4 runs (7.4, 7.25, 7.25, 7.45), 3 judges in each run, no criterion split.
+- Medians per criterion: S1 speed 6, S2 safety 8, S3 usable today 8, S4 Cairn and Glow 9, S5 honest claims 7. These medians alone give 7.45.
+- v0 by the same council: 5.15 (4 / 7 / 5 / 4 / 7). The 7.05 and 7.61 of rounds 1 and 3 were self-judged and are not comparable with this.
+- Per judge, as stored in `score.json`:
+
+| Judge | S1 | S2 | S3 | S4 | S5 | Total |
+|---|---|---|---|---|---|---|
+| 1 | 6 | 7 | 7 | 8 | 7 | 6.85 |
+| 2 | 5 | 8 | 8 | 9 | 7 | 7.15 |
+| 3 | 7 | 8 | 8.5 | 9 | 8.5 | 8.03 |
+
+- What the judges asked for: (1) speed, at least 3x net of start-up (now 2.49; the weakest net figures are `sieve` 1.16, `map_count` 1.39 and `strings` 1.51), and a rerun on a quiet PC; (2) a bug set or safety test written by someone other than the author, and someone else repeating the headline measurements; (3) a first install on a clean PC, with a browser download and SmartScreen; (4) checker messages that point at the line where the unit was lost.
+- The judges read the 16-report text. The 18-report totals were not in front of them.
+- Stop: no new improvement round. The round limit (MAX_ROUNDS = 5) is long passed, and what the judges ask for needs another person, a clean PC, a quiet PC or a redesign of the engine.
+- Files, on my PC only (`hone/versions/` is not tracked): `hone/versions/v8/dossier.md`, `hone/versions/v8/score.json`, `hone/versions/v8/council_stdout.json`.
+
+Gates for v8 (from `judge_report.json` of judge run 3 and from git):
+
+| Gate | Evidence | Result |
+|---|---|---|
+| G1 every check of `judge.py` passes | no failures; language 7, library 12, sandbox 6, claims 6, browser 81 web and 44 page checks, wasm agrees on 12 | pass |
+| G2 same printed text in Kilat and CPython | true for every benchmark | pass |
+| G3 20 of 20 bugs refused before running | 20 of 20; all 20 fixed versions run; mypy --strict catches 14 | pass |
+| G4 program at most 1.5 MB, plugin `main.js` at most 400,000 characters | 1,362,944 bytes (CI builds 1,490,432 and 1,490,656); 392,381 | pass |
+| G5 no test, benchmark or bug file deleted or weakened since v0 | nothing deleted since `94f3e63`; tracked files `tests` 15 -> 28, `bench` 20 -> 20, `bugs` 61 -> 61, `examples` 5 -> 5 | pass by counts only |
+
+- G5 caveat: 0.2.3 changed 12 program files for the unit rule. "Not weakened" is not machine-checked beyond deletions and counts.
+
+Cairn and projects `main`:
+
+- Cairn `main` was red on one relay test (`test_message_from_phone_is_answered_in_the_repo`) from `be526b4` through `ee87743` (438 tests, 1 failure, 4 skipped). PR 42, one line in the catalogue, was merged over it. Someone else fixed the test: at `5ba5fd8` both Ubuntu jobs say "Ran 468 tests" and "OK (skipped=6)" (run 43862704485).
+- projects `main` is green at `5f523d6`. It was red once, at `fae7bad`, on `apps/fade/tests/verify_review.py`: "43 checks passed, 1 failed", `FAIL server + Sightengine: hate symbol held for review, filed as hate []`. The test waits up to 10 s for the hook mark and then reads the report list once; an empty list at that moment gives exactly this output. Probable cause: the report is filed after the hook mark. Not confirmed; the other candidate is that the 10 s ran out. Suggested change for whoever owns fade: wait for the report to appear, not only for the hook mark (the firearm check just above it has the same pattern). Not touched: it is not from this work, the cause is not confirmed, and a merge to projects `main` redeploys my live apps.
+- `apps/fade/tests/verify_api.py`, the flaky test of round 7, was fixed by someone else (`54d36fb`, 2026-11-14).
+
+Mistakes and trouble in this round:
+
+1. The judge was first started on a saturated PC with no protection against stalls; runs 1 and 2 were lost. A build I predicted at 9 minutes took 50.
+2. The CI fuzz line "skipped 900" went unquestioned for a turn. It came from my own unit rule.
+3. For a day only one of the two CI runs of the release commit was read.
+4. The first conclusion about the Linux `nbody` and `loop_sum` slowdown was drawn before the diff was read. The cause is still not found.
+5. A "before" build labelled 0.2.2 was in fact 0.2.3. The comparison was rerun with a true 0.2.2 build.
+6. The pushed commit message of `0e17f86` holds a misquoted figure (`151.84 1/s`). It stays, because fixing it would rewrite history.
+7. This log, the handoff and README said that no real install had ever been run. Wrong; see the correction in round 7 above.
+8. Network: one push was refused by the proxy and went through on the third try; one push took about 4 min 45 s and my helper said "stopped" although it had landed (helper fixed); five API calls sent at the same time were all refused, and the same calls one after another passed. Nothing was routed around the proxy.
+9. The Linux leg of the Cairn check was added without the rig ever having run on Linux, and it failed twice. The fix (`7fe08c8`) was pushed without parsing the workflow file locally.
+10. Two local checks failed because my stand-in `.cmd` wrapper hangs on an inherited standard input. I first blamed the PC's load.
+11. I expected the checks of Cairn PR 42 to be green; `main` was already red on the relay test.
+12. Docs: README and RESULTS went unwritten for fourteen turns, and pass B was prepared for five turns before it was applied. Caught before the commit: a README sentence held a whole list where its count belongs; "6 of these 7" was hard-coded; the wrong model was named for the accepted shaft torque programs. Found in the older text and now stated: README and the 0.2.2 section named only 1450 as a number shared by the prompt and the questions, but the prompt also held 1.5 kN, 12 V and 470 ohm, and three example buttons were test questions.
+13. My working notes were wrong in places and were corrected: "14 new tasks" (4 were reused); piston force repeat 3 counted as plainly correct (it printed `kN/kN kN`); the Cairn checks "took 0.9 to 1.1 s each" (that figure is the time since the page opened).
+14. The session was reset twice on 2026-11-16 and lost its helper functions. One tool call here ends after about 30 s, so long work had to move to the background or to GitHub.
+15. Close-out: I asked GitHub for a fade server file under a path I had guessed (404), so the fade cause stayed unconfirmed. About ten look-only steps came before the first close-out file was written.
+
+### Assumptions
+
+- Merging Cairn PR 42 (one line in the catalogue) while an unrelated relay test was red on `main` was acceptable.
+- The check workflow and its rig (`9e1830b`, `bb33f08`, `7fe08c8`) may live on Kilat `main`.
+- Upgrading the Kilat on my PC from 0.2.1 to 0.2.3 with the release's own `install.cmd` was wanted.
+- Switching off one sandbox restriction (`kernel.apparmor_restrict_unprivileged_userns`) on GitHub's throwaway Linux runner is acceptable. It changes nothing on any PC of mine.
+- A separate 0.2.3 sample section in RESULTS is clearer than rewriting the 0.2.2 one.
+- The v8 dossier (README plus RESULTS as committed) and 4 council runs are a fair form for the council score.
+- Not driving my Cairn window while I am using the PC is the right call.
+- Leaving another app's unsteady test (`verify_review.py`) alone, with the evidence and a suggested change written down, is the right call.
+- A commit that changes only this log may skip CI.
+
+### Still not verified
+
+- Kilat is not installed in my own Cairn; block rendering inside my real notes.
+- Full Cairn test suite on Windows Python 3.13.2 on my PC.
+- A first install on a PC without Kilat, on another PC, and a download with a browser (SmartScreen on unsigned files).
+- Whether anyone but me can repeat the headline numbers. GitHub's machines repeated them with the same script, not another person.
+- A bug set written by someone else. All 20 bugs are mine.
+- Speed goals not reached: 3x net of start-up on my PC (2.49) and 5x. Hone score 7.34 from the council, below 8.5.
+- The Linux leg of the Cairn plugin check: one pass after two failures.
+- Model reliability on independent answers. The sample is mostly replays and its check reads numbers only.
+- The causes of four things: the low Linux CI report (2.78), the Linux `nbody` and `loop_sum` slowdown, the low `sieve` figure on my PC, and the red `verify_review.py` run.
+- The words "numbers not in the prompt" in the 0.2.2 held-out row of RESULTS were not rechecked in this round.
+- Kilat has not been shown to beat Python overall. It is about 3 times faster on these 10 small programs and refuses these 20 bugs before running; Python's libraries, tools and users are not matched.
+
+### Known routes not taken in this round
+
+- Speed: the hit path of `map_set`; `split` straight into the heap; `matmul` not profiled; compact typed lists; short strings in the `Obj` slot; a NaN-boxed `Value`; unboxed Options; `u16` slot tables; pure-Rust trig; an MSVC against GNU build comparison.
+- Measurement: the compare band against build-to-build effects; a wasm timing arm; why `sieve` does not move with the PC's state; the library call in `judge.py` still uses the 120 s limit; `bench/strings` and `micro/strings_full` are the same timed program; the header says "32 small programs" where 43 entries are timed.
+- Builds: why the Windows builds are not reproducible; why the Linux-built wasm differs; shrinking the wasm and the plugin (392,381 of 400,000).
+- Tools: the push helper's 90 s limit against the proxy's worst case of about 285 s; `cairn_catalogue_install.py` is hard-coded to 0.2.1; the catalogue version and the GlowCode prompt are kept by hand; the rig cuts each browser line at about 300 characters; `apps.yml` is not parsed locally; the council launch has no progress output.
+- Language: a clearer hint for `N.m.1` and `m/s:.2`; name the line where a unit was lost; the ratio hint led a model to `kN/kN`; say that `x in mL / 1000` needs brackets; say that dividing by a quantity gives a plain number; `{x:mm} m` prints `8.0 mm m`.
+- Page: not tried at phone width or offline.
+
+## Handoff
+
+Next queue, in order:
+
+1. Install Kilat in my own Cairn by hand: Plugins -> turn on community plugins -> Install on the Kilat card. Then look at one Kilat block in a real note.
+2. Independent evidence (needs another person): a bug set or safety test not written by me, and someone else running `python judge.py`.
+3. First-user path on a clean PC: browser download, SmartScreen, `install.cmd`, PATH.
+4. Speed to 3x net of start-up on my PC: `sieve`, `map_count` and `strings` first; rerun `judge.py` on a quiet PC.
+5. Checker messages: name the line where the unit was lost; fix the ratio hint (`kN/kN`); say when brackets are needed.
+6. Full Cairn test suite on Windows Python 3.13.2 on a quiet PC.
+7. A model sample with fresh answers and a check that reads the unit labels.
+8. `apps/fade/tests/verify_review.py` in juw12/projects (my call; not touched; suggested change in the findings above).
