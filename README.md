@@ -123,6 +123,11 @@ Closest to CPython in this run, with start-up taken out: `sieve` (1.16), `map_co
 for `sieve` fell from 0.313 s to 0.221 s while Kilat's went from 0.123 s to 0.132 s; the reason was
 not found. GitHub's eight runs gave 1.73 to 2.48 for `sieve`, and `strings` was the closest program
 in each of them (1.14 to 1.41): CPython's text code is very good.
+Eight later runs there, after four pushes that changed no source file of the program, gave 2.78 to
+3.19 for the whole process (2.70 to 3.13 with start-up taken out), 1.59 to 2.62 for `sieve` and 1.14
+to 1.36 for `strings`, again the closest program in each. The lowest and the highest of these eight
+came from the same push: 2.78 from the Linux machine and 3.19 from the Windows one. All 16 runs are
+in `RESULTS.md`.
 Kilat is a bytecode interpreter, so compiled and JIT languages are faster than both, and Python with
 NumPy would win the array benchmarks. The goal set for this version was 5 times CPython; it was not reached.
 
@@ -180,6 +185,16 @@ from the same source with a GNU toolchain.
   of the first commit is the one that skipped the 900 unit cases; the two runs of the second commit
   used the corrected test: 11,608 cases, none skipped, no failures, for both systems. Same script,
   same author; not the headline numbers.
+- Four later pushes changed documents, test scripts and a workflow file only (nothing under `src/`).
+  Their 8 runs gave 2.78 to 3.19 (2.70 to 3.13 net of start-up), with every program faster than
+  CPython, 20 of 20 bugs refused and no fuzz failures. Over all 16 runs, 9 reached 3 times, for the
+  whole process and net of start-up alike. The Linux machines built the same program file each time,
+  byte for byte, so the spread among their runs (2.78 to 3.15) does not come from the build. The
+  table is in `RESULTS.md`.
+- A second workflow, `.github/workflows/apps.yml`, is started by hand, not by a push. It runs
+  `tests/glowcode_live_test.py` against the live GlowCode page, `tests/cairn_app_test.py` against
+  Cairn's `main` and, when asked, `tests/glowcode_model_sample.py`. What they gave is with the notes
+  on Cairn and GlowCode further down, and in `RESULTS.md`.
 
 ## New in 0.2
 
@@ -266,6 +281,15 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
   It needs `DecompressionStream`. It keeps the result
   of each program text, so `rand()` and `clock()` stay the same until the blocks are run again.
   A block is stopped after 10 seconds.
+  The same test, `tests/cairn_app_test.py`, was later also run on GitHub's machines, against Cairn's
+  `main` as it stood at that moment (`.github/workflows/apps.yml`, started by hand, three runs on
+  2026-11-16). For Windows with Edge 156 it gave 8 of 8 in each run, against three different Cairn
+  commits. For Linux it failed twice: the first log shows only that the page did not report within
+  150 s; the second shows that Edge ended (exit code -6) before it asked for any page, with a
+  message that its sandbox could not be set up. A step for the Linux machine only then switched off
+  an Ubuntu setting that restricts such sandboxes (`kernel.apparmor_restrict_unprivileged_userns`;
+  Edge's own sandbox stays on), and the third run gave 8 of 8, with Edge 157. That is one pass after
+  two failures: it fits the cause, but it is not a steady result.
 - `install.cmd` from the downloaded 0.2.3 zip was run on one PC, the author's, on 2026-11-16. It
   replaced an installed 0.2.1, and a new process then ran `kilat version` (`kilat 0.2.3`) and an
   example. That PC already had the Kilat folder in its PATH from the earlier install, so the step
@@ -280,13 +304,23 @@ mean 2.10 mm, median 2.05 mm, spread 0.216 mm
   a bug set for Kilat. The measurements were repeated on GitHub's machines by the same script,
   not by another person.
 - GlowCode was tested in headless Edge with a stand-in for the model: 17 of 17 page actions in two runs.
-  With the page's real free models, 10 engineering questions asked 3 times each gave 27 of 30 correct
-  on 0.2.2 (24 of 30 on 0.2.1), and 4 new questions gave 4 of 4. Many of the 30 answers were replayed
-  by the provider and the model prompt contains one of the test numbers, so this is an indication,
-  not a proof; see `RESULTS.md`. In that sample a value printed with no unit (`{largest}`) showed in
-  base SI (`0.0024 m`, not `2.4 mm`); 0.2.3 refuses a program of that kind before it runs (checked
-  with a program written for the purpose, not the model's own), but the page has not been sampled
-  again with 0.2.3. The page was not tried at phone width or offline.
+  With the page's real free models, 10 engineering questions asked 3 times each gave 27 of 30
+  correct on 0.2.2 (24 of 30 on 0.2.1), and 4 new questions gave 4 of 4. Many of the 30 answers were
+  replayed by the provider. Three of the 10 questions are the page's own example questions, and the
+  page's model prompt holds the `1450 rpm` of a fourth question and the `1.5 kN`, `12 V` and
+  `470 ohm` of two of the three. So this is an indication, not a proof; see `RESULTS.md`. In that
+  sample a value printed with no unit (`{largest}`) showed in base SI (`0.0024 m`, not `2.4 mm`);
+  0.2.3 refuses a program of that kind before it runs (checked with a program written for the
+  purpose, not the model's own). With 0.2.3 the live page was opened in Chromium on GitHub's Linux
+  machines, with no model (`tests/glowcode_live_test.py`): 9 of 9 cases in each of 3 runs. The free
+  models were then sampled once more (`tests/glowcode_model_sample.py`, one sample on 2026-11-16):
+  the same 10 questions gave 30 of 30 (26 on the first try; in the other 4 runs the checker first
+  refused a program, 5 programs in all). 14 other questions, 4 of them already used for 0.2.2, gave
+  39 of 42 (36 on the first try); the 3 misses were one answer in mL where litres were asked and two
+  runs still refused after three tries. The test reads numbers only: one run counted as correct
+  printed `Force = 12.57 kN/kN kN`. 39 of the 72 answers came back in under 3 s, and 37 of the 48
+  second and third repeats ended with the same program text as an earlier repeat, so this too is an
+  indication, not a proof. The page was not tried at phone width or offline.
 - The limits of the language itself are listed at the end of the [language guide](docs/LANGUAGE.md).
 
 ## Use it

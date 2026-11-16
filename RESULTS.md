@@ -530,6 +530,72 @@ and the programs are the author's; no other person repeated the measurements.
   Cairn's limit of 400,000 characters, passed in all four.
 - Language tests 7 of 7, library tests 12 of 12 and sandbox tests 6 of 6 in every run.
 
+## Later pushes on GitHub's machines (0.2.3)
+
+Added on 2026-11-16 by `judge_work/round8/results_apps_sections.py` (not in the repository) from the
+reports of the same workflow. Four more commits reached `main` after the release tag. None of them
+changed the language or the timed programs: `git diff 858dc6b..7fe08c8` lists nothing under `src/` or
+`bench/`, and `judge.py` is the same. The rows have the same form as in the table above.
+
+| Commit | Run | Machine | Processor | CPython | Speed, whole process | Speed, net of start-up | Slower than CPython | Bugs refused | Fuzz cases | Fuzz skipped | Fuzz failures |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `847299e` | 43801383391 | Windows | AMD EPYC 9V45 96-Core Processor | 3.13.17 | 2.90 | 2.83 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `847299e` | 43801383391 | Linux | not reported | 3.13.18 | 3.15 | 3.09 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `9e1830b` | 43825708015 | Windows | AMD EPYC 7763 64-Core Processor | 3.13.17 | 3.11 | 3.04 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `9e1830b` | 43825708015 | Linux | not reported | 3.13.18 | 3.14 | 3.07 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `bb33f08` | 43836417469 | Windows | AMD EPYC 7763 64-Core Processor | 3.13.17 | 3.17 | 3.11 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `bb33f08` | 43836417469 | Linux | not reported | 3.13.18 | 2.94 | 2.88 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `7fe08c8` | 43837645294 | Windows | AMD EPYC 9V74 80-Core Processor | 3.13.17 | 3.19 | 3.13 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+| `7fe08c8` | 43837645294 | Linux | not reported | 3.13.18 | 2.78 | 2.70 | 0 of 10 | 20 of 20 | 11,608 | 0 | 0 |
+
+- What the four commits changed: `847299e` the two documents; `9e1830b` a second workflow
+  (`.github/workflows/apps.yml`), two test scripts for it and four lines of the README; `bb33f08` the
+  browser test rig (`tests/web_test.py`); `7fe08c8` one step of the second workflow. Each push ran this
+  workflow once. All eight runs are shown; none was picked or left out.
+- Every row is Kilat 0.2.3 with 2 runs per program. In each run the outputs matched CPython's and all 10
+  programs were faster than CPython.
+- Over these 8 runs Kilat was 2.78 to 3.19 times as fast as CPython for the whole process and 2.70 to
+  3.13 net of start-up. 5 of the 8 reached 3 times for the whole process, and the same 5 reached it net
+  of start-up. Over all 16 runs of 0.2.3 on GitHub's machines the figures are 2.78 to 3.19 and 2.70 to
+  3.13, and 9 of the 16 reached 3 times.
+- The lowest and the highest figure of all 16 runs are both in the last run (43837645294): 2.78 for Linux
+  and 3.19 for Windows. In that Linux run `sieve` gave 1.59 net of start-up, `matmul` 1.77 and `strings`
+  1.14; in the seven other runs of this table `sieve` gave 2.07 to 2.62. Why that run was low was not
+  looked into.
+- The Linux machines built the same program file, byte for byte, in all 8 of their runs, the four of the
+  table above and the four here (`target/release/kilat`, SHA-256
+  `c4c7f99c5914e6aee9635b827755817471c2780c4e04446e90f58c856b07b2aa`). So the spread among the Linux
+  runs, 2.78 to 3.15, does not come from the build: it is one file timed on different machines at
+  different times. The Windows machines built 8 different files in their 8 runs (2.84 to 3.19); why
+  Microsoft's toolchain does not give the same file twice was not looked into.
+- `strings` was again the program closest to CPython net of start-up in each of the 8 runs, at 1.14 to
+  1.36. `sieve` gave 1.59 to 2.62, so the range given above for the first 8 runs (1.73 to 2.48) does not
+  hold for all 16. CPython's start-up took 8 to 26 ms of CPU time.
+- Fuzz test in each of the 8 runs: 11,608 cases, none skipped, no failures, no worker restarted, and the
+  cases ended the same way as before (5,618 finished, 5,601 refused before running, 318 run-time errors,
+  67 fuel stops, 4 memory stops).
+- As before, the four Windows runs built the same `docs/kilat.wasm` as the one in the repository and the
+  four Linux runs built the other file of the same size. The Cairn plugin (`main.js`) came to 392,381
+  bytes in the Windows runs and 392,373 in the Linux runs; the limit is 400,000.
+- 20 of 20 bugs refused, language tests 7 of 7, library tests 12 of 12 and sandbox tests 6 of 6 in every
+  run.
+
+Each program in the last run (43837645294), as times CPython's speed. This is the run with the lowest and
+the highest figure:
+
+| Program | Linux, whole process | Linux, net of start-up | Windows, whole process | Windows, net of start-up |
+|---|---|---|---|---|
+| `collatz` | 2.93 | 2.90 | 3.35 | 3.34 |
+| `fib` | 2.54 | 2.45 | 3.78 | 3.76 |
+| `loop_sum` | 4.68 | 4.65 | 3.70 | 3.68 |
+| `mandelbrot` | 3.46 | 3.43 | 3.12 | 3.09 |
+| `map_count` | 2.29 | 2.21 | 2.45 | 2.36 |
+| `matmul` | 1.87 | 1.77 | 2.30 | 2.18 |
+| `nbody` | 2.87 | 2.83 | 3.72 | 3.70 |
+| `sieve` | 1.67 | 1.59 | 2.66 | 2.56 |
+| `sort` | 9.08 | 9.17 | 9.61 | 10.13 |
+| `strings` | 1.22 | 1.14 | 1.42 | 1.27 |
+
 ## Model sample on the live GlowCode page (0.2.2)
 
 Added by hand from `judge_work/model_sample_round7.py` (not in the repository). The script opens the
@@ -552,6 +618,11 @@ Read these numbers with care:
 - The prompt was taught the test. The page's model prompt now says "`rpm` is already an angular speed:
   with `let speed = 1450 rpm`, torque is `power / speed`", the same number as the shaft-torque task. The
   held-out run (960 rpm, 2900 rpm, other numbers) is the only check that it carries over, and it is 4 runs.
+- Found later (2026-11-16): three of the 10 tasks (`rod stress`, `ohm`, `box volume`) are word for word
+  the page's own example questions, and the prompt's line of example quantities holds `1.5 kN`, the load
+  of the `rod stress` task, and `12 V` and `470 ohm`, the inputs of the `ohm` task. All of this was
+  already so in the page's file for this sample (commit `efb9522` of the page's repository). See "Model
+  sample on the live GlowCode page (0.2.3)" below.
 - The three new checker messages of 0.2.2 were not seen to fire in these runs. The gain comes from the
   prompt lines or from model variation, not provably from the checker.
 - The 2 wrong runs are one replayed program for the "readings" task. It printed
@@ -561,8 +632,255 @@ Read these numbers with care:
 - Since then, 0.2.3 refuses a program of that kind before it runs. A program written for this check
   prints `largest = {largest}` for a value entered in mm: with 0.2.2 it printed `largest = 0.0024 m`;
   with 0.2.3 both `kilat run` and `kilat check` refuse it and suggest `{largest:mm}`. The program the
-  model wrote was not run again, and the page has not been sampled again with 0.2.3.
+  model wrote was not run again. The page was sampled again with 0.2.3 on 2026-11-16; see "Model sample
+  on the live GlowCode page (0.2.3)" below.
 - The test rig error is one run where the click on the Run button timed out after 30 s. That run
   measured nothing, so 29 runs were measured in the full run.
 - In the held-out run, one first try (piston force) was refused by the checker and the second try was
   accepted. The refusal message was not recorded.
+
+## Checks of the two apps on GitHub's machines (0.2.3)
+
+Added on 2026-11-16 by the same script, from the saved reports of a second workflow,
+`.github/workflows/apps.yml`. That workflow is started by hand and never by a push. It has three jobs:
+one tests the live GlowCode page, one tests the Kilat plugin inside Cairn's web app, for Windows and for
+Linux, and one samples the page's free models, only when asked (next section). It was started three
+times, all on 2026-11-16. All three runs are shown; none was picked or left out.
+
+| Run | Kilat commit | Live GlowCode page | Cairn plugin, Windows | Cairn plugin, Linux | Model sample |
+|---|---|---|---|---|---|
+| 43825862174 | `9e1830b` | 9 of 9 | 8 of 8 (Cairn `ee87743`) | failed, no report | run |
+| 43836555198 | `bb33f08` | 9 of 9 | 8 of 8 (Cairn `89567cd`) | failed, no report | not run |
+| 43837700374 | `7fe08c8` | 9 of 9 | 8 of 8 (Cairn `75af214`) | 8 of 8 (Cairn `75af214`) | not run |
+
+### The live GlowCode page
+
+`tests/glowcode_live_test.py` opens https://juw12.github.io/projects/glow/code/ in Playwright's own
+Chromium (159.0.8154.6) on one of GitHub's Linux machines. It taps each of the page's five example
+buttons, types four more programs, presses Run each time and reads what the page shows. No model is used.
+In each of the three runs the page said "Kilat 0.2.3 is ready. Each run may use 20,000,000 steps and 32
+MB.", and the `kilat.wasm` it served was the repository's `docs/kilat.wasm`, byte for byte (786,285
+bytes, SHA-256 `d81524ed2069618962ca0ad36c46496c0fb96d6610e84f1763aa73055b9fd905`). A case passes only
+when the program ends in the stated way and the page shows each stated text. All nine passed in each run:
+
+| Case | Entered by | Must end as | Text that must show |
+|---|---|---|---|
+| example 1: Stress in a bar | example button | finished | `stress = 20.8 MPa` |
+| example 2: Gap statistics | example button | finished | `mean   2.10 mm`, `median 2.05 mm`, `spread 0.216 mm` |
+| example 3: A unit mistake | example button | refused before running | `cannot add m and kg` |
+| example 4: A function and a loop | example button | finished | the lines `0`, `1`, `1`, `2`, `3`, `5`, `8`, `13`, `21`, `34` |
+| example 5: A loop that never ends | example button | stopped at the work limit | `work limit` |
+| spring, units inside the braces | typed | finished | `96.0 N`, `0.384 J` |
+| shaft torque from power / speed with rpm | typed | finished | `49.4 N*m` |
+| rpm times 2 * pi / 60 is refused | typed | refused before running | `rpm` |
+| unit word after a placeholder is refused | typed | refused before running | `{force:N}` |
+
+### The Kilat plugin in Cairn's web app
+
+`tests/cairn_app_test.py` takes a fresh checkout of Cairn's `main` (github.com/juw12/cairn) and copies
+its `docs` folder, which is Cairn's web app, to a work folder. It puts the plugin's `main.js` beside
+Cairn's own plugins and opens the app with its demo brain in headless Edge. The page
+`tests/cairn_app_runner.html` then installs the plugin through Cairn's own plugin loader. Nothing in the
+checkout is changed.
+
+- Windows, with Edge 156: all eight checks passed in each of the three runs. Cairn's `main` moved between
+  the runs, so they tested three different Cairn commits (`ee87743`, `89567cd` and `75af214`). The last
+  check was done 1.3 s, 1.6 s and 1.1 s after the page opened. The eight checks:
+  - Cairn's web app starts with its demo brain
+  - Cairn's own loader installs main.js
+  - Kilat's commands are in Cairn's command list
+  - Cairn's Markdown renderer hands a kilat block to the plugin
+  - a note with kilat blocks, opened in Cairn, shows the results
+  - Cairn's Plugins page lists Kilat
+  - after a reload Cairn starts the plugin again from its own storage
+  - turning the plugin off and removing it leaves Cairn clean
+- Linux, run 43825862174: failed. The test page did not report within 150 s, and the test rig did not yet
+  record what the browser had done.
+- Linux, run 43836555198: failed again, this time with a reason. Commit `bb33f08` had made the rig
+  (`tests/web_test.py`) record what the browser does. Edge ended with exit code -6 before it asked for
+  any page ("requests answered: 0"), with the message "The SUID sandbox helper binary was found, but is
+  not configured correctly".
+- Linux, run 43837700374: 8 of 8 with Edge 157, against Cairn `75af214`. Commit `7fe08c8` had added one
+  step that runs for the Linux machine only,
+  `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`. The job's log shows that setting go
+  from 1 to 0 before the test. The rig does not pass `--no-sandbox`, so Edge's own sandbox stayed on. The
+  last check was done 6.0 s after the page opened.
+- So for Linux the plugin passed once, after two failures. That is not yet a steady result. The reading
+  that Ubuntu's setting kept Edge from building its sandbox fits the message of the second run and the
+  pass of the third, but it rests on that one run, and the step needs `sudo` on GitHub's machine.
+
+### What these checks do not cover
+
+- Cairn's desktop build, and installing the plugin from GitHub inside Cairn: the test puts `main.js` in
+  place itself.
+- The GlowCode page at phone width or offline.
+- Kilat's own browser checks. `tests/web_test.py` and `tests/page_test.py` are run by no workflow, and
+  `judge.py` skips its browser part on GitHub: none of the 16 reports of the two tables of GitHub's runs
+  above holds a browser result. Those checks have run only on the author's PC.
+
+## Model sample on the live GlowCode page (0.2.3)
+
+Added on 2026-11-16 by the same script, from the reports of the two `model-sample` jobs of run
+43825862174 of `.github/workflows/apps.yml` (the first run in the section above).
+`tests/glowcode_model_sample.py`, in the repository since `9e1830b`, opens the live page in Playwright's
+own Chromium (159.0.8154.6) on one of GitHub's Linux machines. For each run it types an engineering
+question in plain words and lets the page's free models write the Kilat program. The page gives the
+models up to three tries and hands the checker's message back after each refusal. A run counts as correct
+only when every expected number is among the numbers the program printed, within 1.5 %. The script waits
+45 s between runs. The main set ran from 07:44 to 08:15 UTC and the held-out set from 08:16 to 08:59 UTC.
+In every run the page said "Kilat 0.2.3 is ready. Each run may use 20,000,000 steps and 32 MB." Its
+`code.js` was 17,550 bytes (SHA-256 `776382afcd1abae1f9589c6c6f534e1a40abecbfbfdb7186e3769bd62dbd63ee`)
+and its prompt for the models was 35 lines (SHA-256
+`d272d4630666f858a14d6abfa417f6ecd1facbe1147c75ffa596292b502c86ec`), the same in both sets.
+
+| Run | Tasks x repeats | Correct | Correct on first try | Ran but wrong | Refused by checker | Test rig error |
+|---|---|---|---|---|---|---|
+| main (same 10 tasks as for 0.2.1 and 0.2.2) | 10 x 3 | 30 of 30 | 26 | 0 | 0 | 0 |
+| held-out (14 tasks: the 4 held-out tasks of the 0.2.2 sample and 10 new ones) | 14 x 3 | 39 of 42 | 36 | 1 | 2 | 0 |
+
+Of the 72 runs, 69 printed every expected number. One printed the right amount in millilitres where
+litres were asked. Two ended with no program accepted in three tries; the page then says that nothing was
+run, and it shows no number. No other language was given these questions, so the sample says nothing
+about how Kilat compares with Python or anything else.
+
+On the same ten questions the 0.2.2 sample gave 27 of 30 and the 0.2.1 sample 24 of 30 (section above).
+The samples differ in more than the checker: the page's prompt for the models was changed along with the
+engine, the free models behind the page change over time, and the 0.2.2 sample was taken in Edge on one
+PC. So the first row says where the page stood on 2026-11-16. It does not measure what the 0.2.3 rule
+did.
+
+Before a program was accepted, or the three tries ran out, the checker refused 17 programs: 5 in 4 runs
+of the main set and 12 in 5 runs of the held-out set. Its messages, by their first line:
+
+| Set | Checker's message (first line) | Programs refused | Where |
+|---|---|---|---|
+| main | `` cannot read the format `m/s:.2` `` | 2 | average speed: repeat 1 tries 1 and 2 |
+| main | `` cannot assign to `sum`: it is not a `var` `` | 1 | sum to 100: repeat 1 try 1 |
+| main | `` cannot read the format `N.m.1` `` | 2 | shaft torque: repeat 2 try 1, repeat 3 try 1 |
+| held-out | `unit mismatch: cannot show Pa as kN` | 4 | piston force: repeat 1 try 1, repeat 2 tries 1 and 3, repeat 3 try 1 |
+| held-out | `unit mismatch: cannot show Float as kN` | 1 | piston force: repeat 1 try 2 |
+| held-out | `this value has a unit, so say which unit to show it in` | 2 | piston force: repeat 2 try 2, repeat 3 try 2 |
+| held-out | `unit mismatch: cannot show m^6 as L` | 3 | box volume 2: repeat 2 tries 1 and 2, repeat 3 try 1 |
+| held-out | `` unexpected `/` after the end of the statement `` | 1 | box volume 2: repeat 3 try 2 |
+| held-out | `unit mismatch: cannot show Float as L` | 1 | box volume 2: repeat 3 try 3 |
+
+### The refusals in the main set
+
+All four runs with a refusal ended correct, on the second or third try. Three of the five refused
+programs spelled a print format in a way the checker cannot read, and one assigned to a name that was not
+declared as a variable.
+
+- The question "average speed", repeat 1: Meta-Llama-3_3-70B-Instruct sent the same program twice, with
+  `{speed:m/s:.2}`. The checker's hint gives three example formats (`{x:.2}`, `{x:8}` and `{p:MPa.1}`);
+  none of them has a unit with a slash in it. The third program, from gpt-oss-20b, has `{speed:m/s.2}`
+  and was accepted.
+- The question "shaft torque", repeats 2 and 3: gpt-oss-20b wrote `{torque:N.m.1}` and got the same hint.
+  The next program had `{torque:N*m.1}` and was accepted; it came from Meta-Llama-3_3-70B-Instruct in
+  repeat 2 and from gpt-oss-20b in repeat 3. In repeat 1 the first program, from
+  Meta-Llama-3_3-70B-Instruct, was accepted.
+- The question "sum to 100", repeat 1: the program declared `let sum = 0` and then assigned to it. The
+  checker said that `sum` is not a `var` and how to declare one. The second program, from minimax-m2.7,
+  has `var sum = 0`.
+
+### The two held-out questions that went wrong
+
+The other 12 held-out questions were correct on the first try in all three repeats (36 runs). The three
+misses, and the three correct runs that needed three tries, belong to two questions.
+
+**Piston force.** The question is "A pressure of 2.5 MPa acts on a round piston 80 mm in diameter. Print
+the force in kN with two decimals." The expected number is 12.57.
+
+- In all three repeats the first program, from gpt-oss-20b, was the same text. It has the line
+  `let radius = diameter / 2.0 mm`. A length divided by a length is a plain number, so the area has no
+  unit and the value named `force` is still a pressure. The checker refused `{force:kN.2}` with "unit
+  mismatch: cannot show Pa as kN". The message is true, but it points at the print and not at the line
+  where the unit was lost.
+- Repeat 1: the second program, from Meta-Llama-3_3-70B-Instruct, turned the force into a plain number
+  (`pressure * area in kN`) and still asked for `{force:kN.2}`. It was refused with the hint to put the
+  unit after the braces. The third program has `{force in kN:.2} kN` and printed `Force = 12.57 kN`.
+  Correct.
+- Repeat 2: the second program has `diameter / 2.0 in mm`, a plain number again, and
+  `{force / 1 kN:.2} kN`. The rule that is new in 0.2.3 refused it ("this value has a unit, so say which
+  unit to show it in") with the hint `` write `{force / 1 kN:MPa/kN.2}` ``. The hint is true of the
+  value, which is a pressure divided by a force, but it does not lead to the mistake. The third program
+  was refused like the first one. The run ended refused, and nothing was run.
+- Repeat 3: the second program got the same message and the same hint. The third one kept the unit of the
+  radius (`let radius = diameter / 2`) and copied the shape of the hint: `{force / 1 kN:kN/kN.2} kN`. It
+  printed `Force = 12.57 kN/kN kN`. The number is right and the label is not. The test reads numbers
+  only, so this run is one of the 39 counted as correct.
+
+**Box volume 2.** The question is "A box is 450 mm by 280 mm by 120 mm. Print its volume in litres." The
+expected number is 15.12.
+
+- Repeat 1: one program, from Meta-Llama-3_3-70B-Instruct, accepted at once. It has `{volume:mL.2}` and
+  printed `volume = 15120.00 mL`. That is the right volume, in millilitres where litres were asked. The
+  test counts it as wrong, because 15.12 is not among the printed numbers.
+- Repeat 2: the first two programs multiplied a volume by `1 L` (`volume_mm3 / 1e6 * 1 L` and
+  `volume / 1e6 * 1 L`), which is a volume times a volume. Both were refused with "unit mismatch: cannot
+  show m^6 as L". The third program, from codestral-latest, has `let volume_l = volume in L` and
+  `{volume_l:.2} L`. It printed `volume = 15.12 L`. Correct.
+- Repeat 3: the first program was the same as in repeat 2. The second has the line
+  `let volume_L = volume_mm3 in mL / 1000`. The checker took the statement to end at `mL` and stopped at
+  the `/` (`` unexpected `/` after the end of the statement ``, with the hint "put each statement on its
+  own line"). The third program did the division on a line of its own and then asked for `{volume_L:L.2}`
+  of what was by then a plain number. It was refused, and the run ended refused.
+
+### How to read these numbers
+
+- It is one sample of each set, taken on one day from one machine, of free models that change. It was not
+  repeated, and it is not a rate to rely on.
+- The runs of one question are not independent. In the main set 15 of the 30 runs came back in under 3 s
+  (2 of them a first repeat), the 30 runs ended with 14 different programs, and in 16 of the 20 second
+  and third repeats the last program was, character for character, the last program of an earlier repeat
+  of the same question. In the held-out set: 24 of 42 under 3 s (none of them a first repeat), 21
+  different programs, and 21 of 28. As in the 0.2.2 sample, stored answers seem to be played back; where
+  they are stored was not looked into. A run took between 0.5 and 62.0 s.
+- Three of the ten main questions (rod stress, ohm and box volume) are, word for word, the three example
+  questions that the page itself offers as buttons. The page's prompt for the models names `1.5 kN`,
+  `12 V` and `470 ohm` among its examples of quantities: the load of "rod stress" and the two inputs of
+  "ohm". It uses `1450 rpm` in its line on torque, the speed of "shaft torque". The main set is therefore
+  the easier of the two.
+- No expected answer of either set is among the numbers in that prompt. Numbers typed in the questions
+  are: in 8 of the 10 main questions and 5 of the 14 held-out ones, at least one number of the question
+  is also somewhere in the prompt. For the main set these are the four numbers named above (1.5, 12, 470
+  and 1450) and the small numbers 1, 2, 4 and 60; "spring" has its 12 as a rate in N/mm, so it shares
+  that number with the prompt's `12 V` by chance. For the held-out set these are the small numbers 1, 3,
+  4 and 60 only.
+- Four of the 14 held-out questions are not new: motor torque, spring 2, shaft power and piston force
+  were the held-out questions of the 0.2.2 sample. All 24 questions were fixed in `9e1830b`, before the
+  sample was started, and that file was not changed afterwards.
+- The test reads numbers, not labels. `Force = 12.57 kN/kN kN` counted as correct. So did two main runs
+  of "readings" that printed `mean = 2.12` and `max = 2.4` with no unit at all. It reads every number in
+  the output: in `second moment of area = 720000.0 mm^4` it reads 720000 and 4.
+- In the two "readings" questions the largest reading is one of the numbers typed in the question, so a
+  program that only printed its inputs back would show that expected number.
+- The other way round, a right amount in another unit counts as wrong (`volume = 15120.00 mL`).
+- The 0.2.3 rule (a value with a unit is not printed without a named unit) refused 2 of the 17 refused
+  programs, both in "piston force", and none in the main set. In the two "readings" questions, where the
+  0.2.2 sample had its wrong answer (`largest = 0.0024 m`), all six runs were correct. That is what was
+  seen; with a new prompt and replayed answers it does not show that the rule is the cause.
+- Programs written, by model as the page names them: main set gpt-oss-20b 21, Meta-Llama-3_3-70B-Instruct
+  13 and minimax-m2.7 1; held-out set gpt-oss-20b 39, Meta-Llama-3_3-70B-Instruct 11 and codestral-latest
+  2.
+- It is a measurement, not a gate. The job is started by hand and never by a push, and it ends green
+  whatever the counts are: the script fails only when no run reaches the page.
+
+### Follow-ups this sample suggests (not done)
+
+- A clearer message for a print format that cannot be read (`N.m.1`, `m/s:.2`). It could say how the unit
+  is written (`N*m`, `m/s`) and that the decimals follow one dot.
+- For a value of another kind than the unit asked ("unit mismatch: cannot show Pa as kN", "unit mismatch:
+  cannot show m^6 as L"), name the line where the value got its unit. In 6 of these 7 programs the unit
+  was lost or doubled on an earlier line than the print the message points at.
+- The hint `` write `{force / 1 kN:MPa/kN.2}` `` is true but did not help: a model followed it to
+  `kN/kN`. For a value divided by one unit, the hint could be the value itself in that unit.
+  `{force:kN.2}` prints `Force = 12.57 kN` when the force is a force (checked by hand with the installed
+  0.2.3), and it gets the "unit mismatch: cannot show Pa as kN" message when it is not.
+- For `x in mL / 1000` the hint speaks of statements on one line. With brackets,
+  `(volume_mm3 in mL) / 1000`, the same program is accepted and prints `volume = 15.12 L` (checked by
+  hand with the installed 0.2.3). The hint could say so.
+- The first mistake in all three repeats of "piston force" was `diameter / 2.0 mm`. The page's prompt
+  says that `x in J` gives a plain number; neither it nor a checker message says the same of a division
+  by a quantity.
+- The test could accept a right amount in another unit and could check the unit label, so that
+  `15120.00 mL` and `12.57 kN/kN kN` are each judged for what they are.
