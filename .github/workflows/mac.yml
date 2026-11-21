@@ -1,0 +1,130 @@
+name: mac
+
+# Kilat for Macs: one `kilat` program for Apple silicon and Intel, built and checked on a Mac, then added
+# to the release as kilat-macos-universal.tar.gz. A file that is already on a release is never replaced.
+#
+#   a release is published        builds that tag and adds the file to it
+#   Run workflow, with a tag      the same, for a release that is already there
+#   Run workflow, no tag / a pull request that touches this file    builds and checks only
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and add the Mac file to (empty: build and check only)"
+        default: ""
+  pull_request:
+    paths:
+      - ".github/workflows/mac.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Rust toolchain, for both chips
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin wasm32-unknown-unknown
+
+      - name: mypy (for the bug table)
+        run: python -m pip install mypy
+
+      - name: Build for this Mac and run the checks the README quotes (judge.py --quick)
+        run: |
+          python build.py native wasm
+          python judge.py --quick
+
+      - name: Fuzz and differential tests
+        run: python tests/fuzz_test.py --out fuzz_summary.json
+
+      - name: Build for Apple silicon and Intel, and join them into one program
+        run: |
+          cargo build --release --bin kilat --target aarch64-apple-darwin
+          cargo build --release --bin kilat --target x86_64-apple-darwin
+          mkdir -p dist/kilat
+          lipo -create -output dist/kilat/kilat \
+            target/aarch64-apple-darwin/release/kilat target/x86_64-apple-darwin/release/kilat
+          lipo -archs dist/kilat/kilat
+          codesign --force --sign - dist/kilat/kilat
+
+      - name: The joined program gives the answers the examples expect, on both chips
+        run: |
+          set -e
+          program=dist/kilat/kilat
+          "$program" --version
+          for chip in arm64 x86_64; do
+            # the Intel half runs through Rosetta on this Apple-silicon machine
+            if ! arch -"$chip" "$program" --version > /dev/null 2>&1; then
+              echo "::warning::the $chip half could not be started on this machine"
+              continue
+            fi
+            for example in examples/*.kilat; do
+              arch -"$chip" "$program" run "$example" > "/tmp/joined.txt" 2>&1 || true
+              target/release/kilat run "$example" > "/tmp/native.txt" 2>&1 || true
+              cmp -s /tmp/joined.txt /tmp/native.txt || { echo "$example differs on $chip"; diff /tmp/native.txt /tmp/joined.txt | head -20; exit 1; }
+            done
+            echo "$chip: every example prints what the checked build prints"
+          done
+          test "$(arch -arm64 "$program" eval '2 m + 3 m')" = "$(target/release/kilat eval '2 m + 3 m')"
+          if "$program" eval '2 m + 3 kg' > /dev/null 2>&1; then echo "2 m + 3 kg was not refused"; exit 1; fi
+
+      - name: Pack kilat-macos-universal.tar.gz
+        run: |
+          cp LICENSE dist/kilat/
+          cp -R examples dist/kilat/examples
+          cat > dist/kilat/README.txt <<'EOF'
+          Kilat for Mac (Apple silicon and Intel in one program).
+
+            ./kilat run examples/hello.kilat
+            ./kilat eval "1200 N / (3 mm * 20 mm)"
+
+          To have `kilat` everywhere, copy it to a folder on your PATH:
+            mkdir -p ~/.local/bin && cp kilat ~/.local/bin/
+
+          If macOS says the program cannot be opened because it is from an unidentified developer
+          (it does for a file a browser downloaded), run once:
+            xattr -d com.apple.quarantine kilat
+
+          Language guide and source: https://github.com/juw12/kilat
+          EOF
+          sed -i '' 's/^          //' dist/kilat/README.txt
+          tar -czf dist/kilat-macos-universal.tar.gz -C dist kilat
+          (cd dist && shasum -a 256 kilat-macos-universal.tar.gz | tee kilat-macos-universal.tar.gz.sha256)
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kilat-macos-universal
+          path: |
+            dist/kilat-macos-universal.tar.gz
+            dist/kilat-macos-universal.tar.gz.sha256
+            judge_report.json
+            fuzz_summary.json
+
+      - name: Add the file to the release (never over one that is there)
+        if: env.TAG != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx "kilat-macos-universal.tar.gz"; then
+            echo "$TAG already has kilat-macos-universal.tar.gz; left as it is"
+            exit 0
+          fi
+          gh release upload "$TAG" dist/kilat-macos-universal.tar.gz dist/kilat-macos-universal.tar.gz.sha256 --repo "$GITHUB_REPOSITORY"
+          echo "Added kilat-macos-universal.tar.gz to $TAG"
