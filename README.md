@@ -7,6 +7,7 @@ The same engine also runs in a web page, inside Python, and as a plugin for the 
 "Kilat" is the Malay word for lightning.
 
 - Try it in the browser: <https://juw12.github.io/kilat/>
+- On an iPhone: open that page in Safari, tap Share, then *Add to Home Screen*. The playground opens full screen with its own icon.
 - Download for Windows: <https://github.com/juw12/kilat/releases/latest>
 - Language guide: [docs/LANGUAGE.md](docs/LANGUAGE.md)
 - Measured results: [RESULTS.md](RESULTS.md)
