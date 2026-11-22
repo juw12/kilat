@@ -40,6 +40,12 @@ error: unit mismatch: cannot add m and kg
   |              ^
 ```
 
+## On an Android phone
+
+- **Android:** [`Kilat-android.apk`](https://github.com/juw12/kilat/releases/download/android/Kilat-android.apk): open the file on the phone and allow your browser to install apps once.
+
+It is the web app (https://juw12.github.io/kilat/) in a full-screen window of its own ([`android/`](android/README.md)) and changes with it. The build is opened on an Android emulator on GitHub before it is published: it installs, opens and stays up. No real phone has run it yet.
+
 ## Is it better than Python?
 
 Not overall. Python has the libraries, the tools and the community, and Kilat has none of that.
