@@ -521,6 +521,11 @@ impl Lexer {
                     return Err(Diag::new(pos, "unexpected `&`").with_hint("use `and`"));
                 }
             }
+            '\u{b0}' => {
+                return Err(Diag::new(pos, "unexpected character `\u{b0}`").with_hint(
+                    "an angle is written `90 deg`, a temperature `celsius(25.0)`",
+                ));
+            }
             other => {
                 return Err(Diag::new(pos, format!("unexpected character `{}`", other)));
             }
