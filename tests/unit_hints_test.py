@@ -245,6 +245,31 @@ REFUSED = [
         "this value has a unit that cannot be written in a format (`m^(1/2)`)",
         "finish the calculation so the unit is a whole one",
     ),
+    # --- a temperature written as a unit (found by writing day-one programs, 0.2.3)
+    (
+        "a temperature in degC",
+        'let t = 25 degC\nprint("{t:K}")\n',
+        "unknown unit `degC`",
+        "a temperature is written `celsius(25.0)`, which gives kelvin",
+    ),
+    (
+        "a temperature in degF",
+        'let t = 77 degF\nprint("{t:K}")\n',
+        "unknown unit `degF`",
+        "`celsius((77.0 - 32.0) / 1.8)`",
+    ),
+    (
+        "a temperature in celsius, which is a function and not a unit",
+        'let t = 25 celsius\nprint("{t:K}")\n',
+        "unknown unit `celsius`",
+        "a temperature difference is `25 K`",
+    ),
+    (
+        "a degree sign",
+        'let t = 25 \u00b0C\nprint("{t:K}")\n',
+        "unexpected character",
+        "an angle is written `90 deg`, a temperature `celsius(25.0)`",
+    ),
 ]
 
 ALLOWED = [

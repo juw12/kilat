@@ -656,6 +656,31 @@ impl Checker {
 
     fn unknown_unit(&mut self, name: &str, pos: Pos, after_in: bool) {
         let msg = format!("unknown unit `{}`", name);
+        // A temperature on the Celsius or Fahrenheit scale is not a unit here, because
+        // 25 degC is not 25 times one degC. Say how to write it, not "did you mean `deg`".
+        match name.to_ascii_lowercase().as_str() {
+            "degc" | "celsius" | "centigrade" => {
+                self.err_hint(
+                    pos,
+                    msg,
+                    "a temperature is written `celsius(25.0)`, which gives kelvin; \
+                     a temperature difference is `25 K`"
+                        .to_string(),
+                );
+                return;
+            }
+            "degf" | "fahrenheit" => {
+                self.err_hint(
+                    pos,
+                    msg,
+                    "a temperature in Fahrenheit is written `celsius((77.0 - 32.0) / 1.8)`, \
+                     which gives kelvin"
+                        .to_string(),
+                );
+                return;
+            }
+            _ => {}
+        }
         let var_ty = match self.lookup(name) {
             Found::Local(_, ty, _, _) => Some(ty),
             Found::Top(id) => Some(self.tops[id as usize].ty.clone()),
