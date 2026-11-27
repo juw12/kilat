@@ -27,9 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
@@ -41,7 +41,7 @@ jobs:
       - name: The live GlowCode page in a real browser (5 examples, 4 typed programs)
         run: python tests/glowcode_live_test.py glowcode_live_report.json
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: glowcode-live
@@ -55,15 +55,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cairn's current main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: juw12/cairn
           path: cairn-checkout
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
@@ -85,7 +85,7 @@ jobs:
       - name: The Kilat plugin installed in Cairn's web app
         run: python tests/cairn_app_test.py cairn-checkout
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: cairn-plugin-${{ matrix.os }}
@@ -108,9 +108,9 @@ jobs:
       KILAT_SAMPLE_REPEATS: ${{ inputs.repeats }}
       KILAT_SAMPLE_PAUSE: ${{ inputs.pause }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
@@ -122,7 +122,7 @@ jobs:
       - name: Free models on the live GlowCode page (a measurement, not a test)
         run: python tests/glowcode_model_sample.py model_sample_${{ matrix.set }}.json
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: model-sample-${{ matrix.set }}
